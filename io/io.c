@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 int main() {
-  char* myStringVar = "dominic";
-  printf(myStringVar);
+  printf("dominic");
   return 0;
 }

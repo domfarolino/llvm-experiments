@@ -35,7 +35,7 @@ enum AbstractType {
 
 // Creates an LLVM Function* prototype, generates an IR declaration for it, and
 // adds it to the FunctionTable.
-Function* CreateFunction(const std::string& name, AbstractType abstractType, int argLength) {
+Function* CreateFunction(const std::string& name, AbstractType abstractType, int argLength, bool variadic = false) {
   // Create arguments prototype vector.
   std::vector<Type*> arguments(argLength, Type::getDoubleTy(TheContext));
 
@@ -46,7 +46,7 @@ Function* CreateFunction(const std::string& name, AbstractType abstractType, int
   else if (abstractType == AbstractType::Double)
     returnType = Type::getDoubleTy(TheContext);
 
-  FunctionType* functionType = FunctionType::get(returnType, arguments, false);
+  FunctionType* functionType = FunctionType::get(returnType, arguments, variadic);
   Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
   FunctionTable[name] = function;
 
@@ -61,6 +61,14 @@ Function* CreateFunction(const std::string& name, AbstractType abstractType, int
 
 int main() {
   TheModule = make_unique<Module>("Dom Sample", TheContext);
+
+  /////// SETUP printf DECLARATION.
+  std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
+
+  FunctionType* printfFunctionType = FunctionType::get(Type::getInt32Ty(TheContext), arguments, true);
+  Function* printfFunction = Function::Create(printfFunctionType, Function::ExternalLinkage, "printf", TheModule.get());
+  FunctionTable["printf"] = printfFunction;
+  /////// END printf SETUP.
 
   //////// BEGIN ADDER.
   std::string functionName = "AdderFunction";
@@ -102,7 +110,14 @@ int main() {
   std::vector<Value*> adderArguments = {ProduceNumber(38), ProduceNumber(42)};
   Value* adderReturn = Builder.CreateCall(AdderCallee, adderArguments, "calladder");
   Value* mainReturn = new FPToSIInst(adderReturn, Type::getInt32Ty(TheContext), "fptointegerconv", mainBB);
+
+  /////// CALL printf.
+  Value* printfArgString = Builder.CreateGlobalStringPtr("dominic!!\n");
+  std::vector<Value*> printfArguments = { printfArgString };
+  Builder.CreateCall(printfFunction, printfArguments, "callprintf");
+  /////// END CALL printf.
   Builder.CreateRet(mainReturn);
+
   // End main body.
 
   verifyFunction(*Main);
