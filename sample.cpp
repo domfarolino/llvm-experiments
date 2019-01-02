@@ -6,43 +6,21 @@
 int main() {
   CodeGen::Setup();
 
-  //////// BEGIN ADDER.
-  // Create a function and add it to the FunctionTable.
-  Function* AdderFunction = CreateFunction("AdderFunction", AbstractType::Double, AbstractType::Double, 2);
+  //////// ADDER.
+  CodeGen::CreateFunction("AdderFunction", CodeGen::AbstractType::Double, CodeGen::AbstractType::Double, 2);
+  Value* returnValue = CodeGen::Add(CodeGen::GetVariable("argument0"), CodeGen::GetVariable("argument1"), "addUltimateReturn");
+  CodeGen::ReturnFrom("AdderFunction", returnValue);
 
-  //Values["argument0"] = Builder.CreateFMul(Values["argument0"], ProduceNumber(2));
-  //Values["argument1"] = Builder.CreateFMul(Values["argument0"], ProduceNumber(2));
-  Value* returnValue = Builder.CreateFAdd(Values["argument0"], Values["argument1"], "addUltimateReturn");
-
-  // Delete this stuff.
-  Builder.CreateRet(returnValue);
-  verifyFunction(*AdderFunction);
-  //////// END ADDER.
-
-  //////// BEGIN MAIN.
-  CreateFunction("main", AbstractType::Integer, 0);
-  Function* Main = FunctionTable["main"];
-  Function* AdderCallee = FunctionTable["AdderFunction"];
-
-  BasicBlock* mainBB = BasicBlock::Create(TheContext, "entry", Main);
-  Builder.SetInsertPoint(mainBB);
-
-  // Main body.
-  std::vector<Value*> adderArguments = {ProduceNumber(38), ProduceNumber(42)};
-  Value* adderReturn = Builder.CreateCall(AdderCallee, adderArguments, "calladder");
-  Value* mainReturn = new FPToSIInst(adderReturn, Type::getInt32Ty(TheContext), "fptointegerconv", mainBB);
+  //////// MAIN.
+  CodeGen::CreateFunction("main", CodeGen::AbstractType::Integer, CodeGen::AbstractType::Integer, 0);
+  Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
+  Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");
 
   /////// CALL printf.
-  Value* printfArgString = Builder.CreateGlobalStringPtr("dominic!!\n");
-  std::vector<Value*> printfArguments = { printfArgString };
-  Builder.CreateCall(printfFunction, printfArguments, "callprintf");
-  /////// END CALL printf.
-  Builder.CreateRet(mainReturn);
+  std::vector<Value*> printfArguments = { CodeGen::ProduceString("dominicfarolino!!%d"), CodeGen::ProduceInteger(40) };
+  CodeGen::CallFunction("printf", printfArguments, "callprintf");
 
-  // End main body.
-
-  verifyFunction(*Main);
-  //////// END MAIN.
+  CodeGen::ReturnFrom("main", castToInt);
 
   CodeGen::PrintBitCode();
   return 0;

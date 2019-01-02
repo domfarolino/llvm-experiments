@@ -11,25 +11,26 @@
 
 using namespace llvm;
 
+namespace CodeGen {
 enum AbstractType {
   Integer,
   Double,
 };
 
-class CodeGen {
-private:
-  static LLVMContext TheContext;
-  static IRBuilder<> Builder(TheContext);
-  static std::unique_ptr<Module> TheModule;
+static LLVMContext TheContext;
+static IRBuilder<> Builder(TheContext);
+static std::unique_ptr<Module> TheModule;
 
-  // These two are essentially mimicing our abstract symbol table.
-  static std::map<std::string, Value*> LocalVariables;
-  static std::map<std::string, std::pair<Function*, BasicBlock*>> FunctionTable;
+// These two are essentially mimicing our abstract symbol table.
+static std::map<std::string, Value*> LocalVariables;
+static std::map<std::string, std::pair<Function*, BasicBlock*>> FunctionTable;
 
+//class CodeGen {
+//private:
   // Disallow creating an instance of this class.
-  CodeGen() {}
+  //CodeGen() {}
 
-  void DeclarePrintf() {
+  static void DeclarePrintf() {
     // Set up printf argument(s).
     std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
     FunctionType* printfFunctionType = FunctionType::get(Type::getInt32Ty(TheContext), arguments, true);
@@ -37,41 +38,50 @@ private:
     FunctionTable["printf"] = std::make_pair(printfFunction, nullptr);
   }
 
-public:
-  void Setup() {
+//public:
+  static void Setup() {
     TheModule = make_unique<Module>("Dom Sample", TheContext);
     DeclarePrintf();
   }
 
-  void PrintBitCode() {
+  static void PrintBitCode() {
     TheModule->print(errs(), nullptr);
   }
 
-  Value* ProduceNumber(double val) {
+  static Value* ProduceNumber(double val) {
     return ConstantFP::get(TheContext, APFloat(val));
   }
 
-  Value* ProduceInteger(int val) {
+  static Value* ProduceInteger(int val) {
     return ConstantInt::get(TheContext, APInt(/* nbits 8 */ 32, /* value */ val, /* is signed */ true));
+  }
+
+  static Value* ProduceString(const std::string& str) {
+    return Builder.CreateGlobalStringPtr(str);
+  }
+
+  static Value* Add(Value* lhs, Value* rhs, const std::string& regName) {
+    return Builder.CreateFAdd(lhs, rhs, regName);
   }
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
-  Function* CreateFunction(const std::string& name,
+  static Function* CreateFunction(const std::string& name,
                            AbstractType abstractReturnType,
                            AbstractType abstractArgType, int argLength,
                            bool variadic = false) {
     // Create arguments prototype vector.
+    std::vector<Type*> arguments;
     if (abstractArgType == AbstractType::Integer)
-      std::vector<Type*> arguments(argLength, Type::getInt32Ty(TheContext));
+      arguments.assign(argLength, Type::getInt32Ty(TheContext));
     else if (abstractArgType == AbstractType::Double)
-      std::vector<Type*> arguments(argLength, Type::getDoubleTy(TheContext));
+      arguments.assign(argLength, Type::getDoubleTy(TheContext));
 
     // Create function prototype.
     Type* returnType;
     if (abstractReturnType == AbstractType::Integer)
       returnType = Type::getInt32Ty(TheContext);
-    else if (abstractType == AbstractType::Double)
+    else if (abstractReturnType == AbstractType::Double)
       returnType = Type::getDoubleTy(TheContext);
 
     // Make Function.
@@ -98,5 +108,41 @@ public:
 
     FunctionTable[name] = std::make_pair(function, BB);
     return function;
+  }
+
+  static void ReturnFrom(const std::string& name, Value* returnValue) {
+    if (FunctionTable.find(name) == FunctionTable.end()) {
+      std::cout << "The given function name " << name << " has not been declared" << std::endl;
+      return;
+    }
+
+    Function* function = FunctionTable[name].first;
+    Builder.SetInsertPoint(FunctionTable[name].second); // necessary?
+    Builder.CreateRet(returnValue);
+    verifyFunction(*function);
+  }
+
+  static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName) {
+    Function* function = FunctionTable[name].first;
+    return Builder.CreateCall(function, args, regName);
+  }
+
+  static Value* CastFloatToInt(Value* input, const std::string& currentFunction, const std::string& regName) {
+    BasicBlock* BB = FunctionTable[currentFunction].second;
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return new FPToSIInst(input, Type::getInt32Ty(TheContext), regName, BB);
+  }
+
+  static Value* GetVariable(const std::string& name) {
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    return LocalVariables[name];
   }
 };
