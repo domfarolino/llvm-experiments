@@ -11,7 +11,6 @@
 
 using namespace llvm;
 
-namespace CodeGen {
 enum AbstractType {
   Integer,
   Double,
@@ -25,10 +24,10 @@ static std::unique_ptr<Module> TheModule;
 static std::map<std::string, Value*> LocalVariables;
 static std::map<std::string, std::pair<Function*, BasicBlock*>> FunctionTable;
 
-//class CodeGen {
-//private:
+class CodeGen {
+private:
   // Disallow creating an instance of this class.
-  //CodeGen() {}
+  CodeGen() {}
 
   static void DeclarePrintf() {
     // Set up printf argument(s).
@@ -38,7 +37,7 @@ static std::map<std::string, std::pair<Function*, BasicBlock*>> FunctionTable;
     FunctionTable["printf"] = std::make_pair(printfFunction, nullptr);
   }
 
-//public:
+public:
   static void Setup() {
     TheModule = make_unique<Module>("Dom Sample", TheContext);
     DeclarePrintf();
