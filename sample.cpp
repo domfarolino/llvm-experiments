@@ -7,12 +7,17 @@ int main() {
   CodeGen::Setup();
 
   //////// ADDER.
-  CodeGen::CreateFunction("AdderFunction", AbstractType::Double, AbstractType::Double, 2);
-  Value* returnValue = CodeGen::Add(CodeGen::GetVariable("argument0"), CodeGen::GetVariable("argument1"), "addUltimateReturn");
+  std::vector<std::pair<std::string, AbstractType>> adderArguments = {
+    std::make_pair("left", AbstractType::Double),
+    std::make_pair("right", AbstractType::Double)
+  };
+  CodeGen::CreateFunction("AdderFunction", AbstractType::Double, adderArguments);
+  Value* returnValue = CodeGen::Add(CodeGen::GetVariable("left"), CodeGen::GetVariable("right"), "addUltimateReturn");
   CodeGen::ReturnFrom("AdderFunction", returnValue);
 
   //////// MAIN.
-  CodeGen::CreateFunction("main", AbstractType::Integer, AbstractType::Integer, 0);
+  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
   Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");
 

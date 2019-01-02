@@ -5,9 +5,9 @@ source_filename = "Dom Sample"
 
 declare i32 @printf(i8*, ...)
 
-define double @AdderFunction(double %argument0, double %argument1) {
+define double @AdderFunction(double %left, double %right) {
 entry:
-  %addUltimateReturn = fadd double %argument0, %argument1
+  %addUltimateReturn = fadd double %left, %right
   ret double %addUltimateReturn
 }
 

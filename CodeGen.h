@@ -1,4 +1,5 @@
 #include <map>
+#include <stack>
 #include <utility> // for std::pair.
 
 #include "llvm/IR/Verifier.h"
@@ -22,7 +23,8 @@ static std::unique_ptr<Module> TheModule;
 
 // These two are essentially mimicing our abstract symbol table.
 static std::map<std::string, Value*> LocalVariables;
-static std::map<std::string, std::pair<Function*, BasicBlock*>> FunctionTable;
+static std::map<std::string, Function*> FunctionTable;
+static std::stack<BasicBlock*> BasicBlockStack;
 
 class CodeGen {
 private:
@@ -34,7 +36,18 @@ private:
     std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
     FunctionType* printfFunctionType = FunctionType::get(Type::getInt32Ty(TheContext), arguments, true);
     Function* printfFunction = Function::Create(printfFunctionType, Function::ExternalLinkage, "printf", TheModule.get());
-    FunctionTable["printf"] = std::make_pair(printfFunction, nullptr);
+    FunctionTable["printf"] = printfFunction;
+  }
+
+  // Used as a helper.
+  static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
+    if (abstractType == AbstractType::Integer)
+      return Type::getInt32Ty(TheContext);
+    else if (abstractType == AbstractType::Double)
+      return Type::getDoubleTy(TheContext);
+
+    // Assert: This is never reached.
+    return Type::getDoubleTy(TheContext);
   }
 
 public:
@@ -59,44 +72,43 @@ public:
     return Builder.CreateGlobalStringPtr(str);
   }
 
-  static Value* Add(Value* lhs, Value* rhs, const std::string& regName) {
+  static Value* Add(Value* lhs, Value* rhs, const std::string& regName = "") {
     return Builder.CreateFAdd(lhs, rhs, regName);
+  }
+
+  static Value* Subtract(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateSub(lhs, rhs, regName);
   }
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
   static Function* CreateFunction(const std::string& name,
                            AbstractType abstractReturnType,
-                           AbstractType abstractArgType, int argLength,
+                           std::vector<std::pair<std::string, AbstractType>> arguments,
                            bool variadic = false) {
     // Create arguments prototype vector.
-    std::vector<Type*> arguments;
-    if (abstractArgType == AbstractType::Integer)
-      arguments.assign(argLength, Type::getInt32Ty(TheContext));
-    else if (abstractArgType == AbstractType::Double)
-      arguments.assign(argLength, Type::getDoubleTy(TheContext));
+    std::vector<Type*> argumentTypes;
+    for (auto argumentPair: arguments) {
+      argumentTypes.push_back(AbstractTypeToLLVMType(argumentPair.second));
+    }
 
     // Create function prototype.
-    Type* returnType;
-    if (abstractReturnType == AbstractType::Integer)
-      returnType = Type::getInt32Ty(TheContext);
-    else if (abstractReturnType == AbstractType::Double)
-      returnType = Type::getDoubleTy(TheContext);
+    Type* returnType = AbstractTypeToLLVMType(abstractReturnType);
 
     // Make Function.
-    FunctionType* functionType = FunctionType::get(returnType, arguments, variadic);
+    FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
     Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
+
+    // Name arguments.
+    int i = 0;
+    for (auto& arg: function->args()) {
+      arg.setName(arguments[i++].first);
+    }
 
     // Create BasicBlock to start inserting function body IR into; the BasicBlock
     // is inserted into the Function.
     BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
     Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
-
-    // Name arguments (optional, but easier for debugging).
-    int i = 0;
-    for (auto& arg: function->args()) {
-      arg.setName("argument" + std::to_string(i++));
-    }
 
     // Add arguments to local variables.
     // Now that we're "inside" the function, we want to have access to the
@@ -105,7 +117,8 @@ public:
       LocalVariables[arg.getName()] = &arg; // Values[argumentName] = Value*.
     }
 
-    FunctionTable[name] = std::make_pair(function, BB);
+    FunctionTable[name] = function;
+    BasicBlockStack.push(BB);
     return function;
   }
 
@@ -115,19 +128,24 @@ public:
       return;
     }
 
-    Function* function = FunctionTable[name].first;
-    Builder.SetInsertPoint(FunctionTable[name].second); // necessary?
+    Function* function = FunctionTable[name];
+    // Assert !BasicBlockStack.empty()
+    Builder.SetInsertPoint(BasicBlockStack.top());
     Builder.CreateRet(returnValue);
     verifyFunction(*function);
+
+    BasicBlockStack.pop();
+    BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
+    Builder.SetInsertPoint(nextBlock);
   }
 
   static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName) {
-    Function* function = FunctionTable[name].first;
+    Function* function = FunctionTable[name];
     return Builder.CreateCall(function, args, regName);
   }
 
   static Value* CastFloatToInt(Value* input, const std::string& currentFunction, const std::string& regName) {
-    BasicBlock* BB = FunctionTable[currentFunction].second;
+    BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
