@@ -18,12 +18,19 @@ int main() {
         CodeGen::CreateFunction("AdderFunction", AbstractType::Double, adderArguments);
         Value* returnValue = CodeGen::Add(CodeGen::GetVariable("left"), CodeGen::GetVariable("right"), "addUltimateReturn");
 
-        /////// CALL printf.
+        /////// CALL printf from AdderFunction.
         std::vector<Value*> tmpArgs = { CodeGen::ProduceString("Adder returning: %f\n"), returnValue };
         CodeGen::CallFunction("printf", tmpArgs, "callprintf");
 
         CodeGen::ReturnFrom("AdderFunction", returnValue);
         //////// END ADDER.
+
+  /////// VOIDFN.
+  CodeGen::CreateFunction("someVoidFunction", AbstractType::Void, {});
+  CodeGen::ReturnFrom("someVoidFunction", nullptr);
+  /////// END VOIDFN.
+
+  CodeGen::CallFunction("someVoidFunction", {});
 
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
   Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");

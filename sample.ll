@@ -8,6 +8,7 @@ declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
+  call void @someVoidFunction()
   %calladder = call double @AdderFunction(double 3.800000e+01, double 4.200000e+01)
   %fpToIntegerConv = fptosi double %calladder to i32
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @1, i32 0, i32 0), i32 %fpToIntegerConv)
@@ -19,4 +20,9 @@ entry:
   %addUltimateReturn = fadd double %left, %right
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), double %addUltimateReturn)
   ret double %addUltimateReturn
+}
+
+define void @someVoidFunction() {
+entry:
+  ret void
 }

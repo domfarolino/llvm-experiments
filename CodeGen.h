@@ -15,6 +15,7 @@ using namespace llvm;
 enum AbstractType {
   Integer,
   Double,
+  Void,
 };
 
 static LLVMContext TheContext;
@@ -45,6 +46,8 @@ private:
       return Type::getInt32Ty(TheContext);
     else if (abstractType == AbstractType::Double)
       return Type::getDoubleTy(TheContext);
+    else if (abstractType == AbstractType::Void)
+      return Type::getVoidTy(TheContext);
 
     // Assert: This is never reached.
     return Type::getDoubleTy(TheContext);
@@ -122,7 +125,7 @@ public:
     return function;
   }
 
-  static void ReturnFrom(const std::string& name, Value* returnValue) {
+  static void ReturnFrom(const std::string& name, Value* returnValue = nullptr) {
     if (FunctionTable.find(name) == FunctionTable.end()) {
       std::cout << "The given function name " << name << " has not been declared" << std::endl;
       return;
@@ -131,7 +134,11 @@ public:
     Function* function = FunctionTable[name];
     // Assert !BasicBlockStack.empty()
     Builder.SetInsertPoint(BasicBlockStack.top());
-    Builder.CreateRet(returnValue);
+    if (function->getReturnType() == Type::getVoidTy(TheContext))
+      Builder.CreateRetVoid();
+    else
+      Builder.CreateRet(returnValue);
+
     verifyFunction(*function);
 
     BasicBlockStack.pop();
@@ -139,7 +146,7 @@ public:
     Builder.SetInsertPoint(nextBlock);
   }
 
-  static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName) {
+  static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
     Function* function = FunctionTable[name];
     return Builder.CreateCall(function, args, regName);
   }
