@@ -12,10 +12,10 @@ int main() {
 
         //////// ADDER.
         std::vector<std::pair<std::string, AbstractType>> adderArguments = {
-          std::make_pair("left", AbstractType::Double),
-          std::make_pair("right", AbstractType::Double)
+          std::make_pair("left", AbstractType::Float),
+          std::make_pair("right", AbstractType::Float)
         };
-        CodeGen::CreateFunction("AdderFunction", AbstractType::Double, adderArguments);
+        CodeGen::CreateFunction("AdderFunction", AbstractType::Float, adderArguments);
         Value* returnValue = CodeGen::Add(CodeGen::GetVariable("left"), CodeGen::GetVariable("right"), "addUltimateReturn");
 
         /////// CALL printf from AdderFunction.
@@ -26,7 +26,7 @@ int main() {
         //////// END ADDER.
 
   /////// VOIDFN.
-  CodeGen::CreateFunction("comparisonFunction", AbstractType::Void, { std::make_pair("value", AbstractType::Double) });
+  CodeGen::CreateFunction("comparisonFunction", AbstractType::Void, { std::make_pair("value", AbstractType::Float) });
 
   CodeGen::ReturnFrom("comparisonFunction", nullptr);
   /////// END VOIDFN.

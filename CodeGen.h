@@ -14,7 +14,7 @@ using namespace llvm;
 
 enum AbstractType {
   Integer,
-  Double,
+  Float,
   Void,
 };
 
@@ -44,7 +44,7 @@ private:
   static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
     if (abstractType == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
-    else if (abstractType == AbstractType::Double)
+    else if (abstractType == AbstractType::Float)
       return Type::getDoubleTy(TheContext);
     else if (abstractType == AbstractType::Void)
       return Type::getVoidTy(TheContext);
