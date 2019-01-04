@@ -9,7 +9,6 @@ declare i32 @printf(i8*, ...)
 define i32 @main() {
 entry:
   %calladder = call double @AdderFunction(double 3.800000e+01, double 4.200000e+01)
-  call void @comparisonFunction(double %calladder)
   %fpToIntegerConv = fptosi double %calladder to i32
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @1, i32 0, i32 0), i32 %fpToIntegerConv)
   ret i32 %fpToIntegerConv
@@ -22,7 +21,27 @@ entry:
   ret double %addUltimateReturn
 }
 
-define void @comparisonFunction(double %value) {
+define void @integerFunction(i32 %integerArgument) {
+entry:
+  ret void
+}
+
+define void @floatFunction(double %floatArgument) {
+entry:
+  ret void
+}
+
+define void @boolFunction(i8 %boolArgument) {
+entry:
+  ret void
+}
+
+define void @charFunction(i8 %charArgument) {
+entry:
+  ret void
+}
+
+define void @stringFunction(i8* %stringArgument) {
 entry:
   ret void
 }

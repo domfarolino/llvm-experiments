@@ -25,14 +25,28 @@ int main() {
         CodeGen::ReturnFrom("AdderFunction", returnValue);
         //////// END ADDER.
 
-  /////// VOIDFN.
-  CodeGen::CreateFunction("comparisonFunction", AbstractType::Void, { std::make_pair("value", AbstractType::Float) });
+  /////// Function takes a Integer.
+  CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
+  CodeGen::ReturnFrom("integerFunction", nullptr);
 
-  CodeGen::ReturnFrom("comparisonFunction", nullptr);
-  /////// END VOIDFN.
+  /////// Function takes a float.
+  CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_pair("floatArgument", AbstractType::Float) });
+  CodeGen::ReturnFrom("floatFunction", nullptr);
+
+  /////// Function takes a bool.
+  CodeGen::CreateFunction("boolFunction", AbstractType::Void, { std::make_pair("boolArgument", AbstractType::Bool) });
+  CodeGen::ReturnFrom("boolFunction", nullptr);
+
+  /////// Function takes a char.
+  CodeGen::CreateFunction("charFunction", AbstractType::Void, { std::make_pair("charArgument", AbstractType::Char) });
+  CodeGen::ReturnFrom("charFunction", nullptr);
+
+  /////// Function takes a string.
+  CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
+  CodeGen::ReturnFrom("stringFunction", nullptr);
 
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
-  CodeGen::CallFunction("comparisonFunction", { adderReturn });
+  //CodeGen::CallFunction("floatFunction", { adderReturn });
   Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");
 
   /////// CALL printf.

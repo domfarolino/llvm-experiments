@@ -15,6 +15,9 @@ using namespace llvm;
 enum AbstractType {
   Integer,
   Float,
+  Bool,
+  Char,
+  String,
   Void,
 };
 
@@ -46,6 +49,12 @@ private:
       return Type::getInt32Ty(TheContext);
     else if (abstractType == AbstractType::Float)
       return Type::getDoubleTy(TheContext);
+    else if (abstractType == AbstractType::Bool)
+      return Type::getInt8Ty(TheContext);
+    else if (abstractType == AbstractType::Char)
+      return Type::getInt8Ty(TheContext);
+    else if (abstractType == AbstractType::String)
+      return Type::getInt8Ty(TheContext)->getPointerTo();
     else if (abstractType == AbstractType::Void)
       return Type::getVoidTy(TheContext);
 
