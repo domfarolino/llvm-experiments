@@ -26,13 +26,13 @@ int main() {
         //////// END ADDER.
 
   /////// VOIDFN.
-  CodeGen::CreateFunction("someVoidFunction", AbstractType::Void, {});
-  CodeGen::ReturnFrom("someVoidFunction", nullptr);
+  CodeGen::CreateFunction("comparisonFunction", AbstractType::Void, { std::make_pair("value", AbstractType::Double) });
+
+  CodeGen::ReturnFrom("comparisonFunction", nullptr);
   /////// END VOIDFN.
 
-  CodeGen::CallFunction("someVoidFunction", {});
-
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
+  CodeGen::CallFunction("comparisonFunction", { adderReturn });
   Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");
 
   /////// CALL printf.
