@@ -54,7 +54,7 @@ int main() {
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
   Value* castToBool = CodeGen::CastFloatToBool(adderReturn);
   CodeGen::CallFunction("boolFunction", { castToBool });
-  Value* castToInt = CodeGen::CastFloatToInt(adderReturn);
+  Value* castToInt = CodeGen::CastFloatToInteger(adderReturn);
 
   /////// CALL printf.
   std::vector<Value*> printfArguments = { CodeGen::ProduceString("dominicfarolino!!%d"), castToInt };

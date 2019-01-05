@@ -242,7 +242,7 @@ public:
     return input;
   }
 
-  static Value* CastFloatToInt(Value* input) {
+  static Value* CastFloatToInteger(Value* input) {
     // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
