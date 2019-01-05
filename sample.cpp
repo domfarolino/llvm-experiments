@@ -35,6 +35,12 @@ int main() {
 
   /////// Function takes a bool.
   CodeGen::CreateFunction("boolFunction", AbstractType::Void, { std::make_pair("boolArgument", AbstractType::Bool) });
+  CodeGen::CallFunction("printf", { CodeGen::ProduceString("boolArgument: %d\n"), CodeGen::GetVariable("boolArgument") });
+  CodeGen::IfThen(CodeGen::GetVariable("boolArgument"));
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("if -> then was executed!\n") });
+  CodeGen::Else();
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("if -> else was executed!\n") });
+  CodeGen::EndIf();
   CodeGen::ReturnFrom("boolFunction", nullptr);
 
   /////// Function takes a char.
@@ -46,8 +52,9 @@ int main() {
   CodeGen::ReturnFrom("stringFunction", nullptr);
 
   Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
-  //CodeGen::CallFunction("floatFunction", { adderReturn });
-  Value* castToInt = CodeGen::CastFloatToInt(adderReturn, "main", "fpToIntegerConv");
+  Value* castToBool = CodeGen::CastFloatToBool(adderReturn);
+  CodeGen::CallFunction("boolFunction", { castToBool });
+  Value* castToInt = CodeGen::CastFloatToInt(adderReturn);
 
   /////// CALL printf.
   std::vector<Value*> printfArguments = { CodeGen::ProduceString("dominicfarolino!!%d"), castToInt };

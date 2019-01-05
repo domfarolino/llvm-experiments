@@ -30,6 +30,19 @@ static std::map<std::string, Value*> LocalVariables;
 static std::map<std::string, Function*> FunctionTable;
 static std::stack<BasicBlock*> BasicBlockStack;
 
+static struct IfBlock {
+  Value* condition;
+  BasicBlock *ThenBB, *ElseBB, *MergeBB;
+  IfBlock(Value* inCondition,
+          BasicBlock* inThenBB,
+          BasicBlock* inElseBB,
+          BasicBlock* inMergeBB): condition(inCondition),
+                                  ThenBB(inThenBB),
+                                  ElseBB(inElseBB),
+                                  MergeBB(inMergeBB) {}
+  IfBlock() {}
+} CurrentIfBlock;
+
 class CodeGen {
 private:
   // Disallow creating an instance of this class.
@@ -50,7 +63,7 @@ private:
     else if (abstractType == AbstractType::Float)
       return Type::getDoubleTy(TheContext);
     else if (abstractType == AbstractType::Bool)
-      return Type::getInt8Ty(TheContext);
+      return Type::getInt1Ty(TheContext);
     else if (abstractType == AbstractType::Char)
       return Type::getInt8Ty(TheContext);
     else if (abstractType == AbstractType::String)
@@ -77,7 +90,11 @@ public:
   }
 
   static Value* ProduceInteger(int val) {
-    return ConstantInt::get(TheContext, APInt(/* nbits 8 */ 32, /* value */ val, /* is signed */ true));
+    return ConstantInt::get(TheContext, APInt(/* nbits */ 32, /* value */ val, /* is signed */ true));
+  }
+
+  static Value* ProduceBool(bool val) {
+    return Builder.CreateFCmpONE(ProduceNumber(val), ProduceNumber(0));
   }
 
   static Value* ProduceString(const std::string& str) {
@@ -141,7 +158,7 @@ public:
     }
 
     Function* function = FunctionTable[name];
-    // Assert !BasicBlockStack.empty()
+    // Assert !BasicBlockStack.empty().
     Builder.SetInsertPoint(BasicBlockStack.top());
     if (function->getReturnType() == Type::getVoidTy(TheContext))
       Builder.CreateRetVoid();
@@ -155,21 +172,119 @@ public:
     Builder.SetInsertPoint(nextBlock);
   }
 
+  static void IfThen(Value* inCondition) {
+    inCondition = ToBool(inCondition);
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+
+    // Add |ThenBB| to |currentFunction| right now.
+    BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", currentFunction),
+               *ElseBB = BasicBlock::Create(TheContext, "else"),
+               *MergeBB = BasicBlock::Create(TheContext, "ifmerge");
+    CurrentIfBlock = IfBlock(inCondition, ThenBB, ElseBB, MergeBB);
+    Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
+
+    // Start generating code into |ThenBB|.
+    BasicBlockStack.pop();
+    BasicBlockStack.push(ThenBB);
+    Builder.SetInsertPoint(ThenBB);
+  }
+
+  static void Else() {
+    // When we're ready to generate into |ElseBB|, we have to have |ThenBB|
+    // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
+    // the current function's list of BasicBlocks, and start generating into
+    // |ElseBB|.
+    Builder.CreateBr(CurrentIfBlock.MergeBB);
+
+    // This is subtle but necessary, as 'Then' codegen can change the current
+    // block.
+    CurrentIfBlock.ThenBB = Builder.GetInsertBlock();
+
+    // Push |ElseBB| to |currentFunction|'s list of BasicBlocks, and start
+    // generating into |ElseBB|.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.ElseBB);
+    BasicBlockStack.pop();
+    BasicBlockStack.push(CurrentIfBlock.ElseBB);
+    Builder.SetInsertPoint(CurrentIfBlock.ElseBB);
+  }
+
+  static void EndIf() {
+    // See Else().
+    Builder.CreateBr(CurrentIfBlock.MergeBB);
+    CurrentIfBlock.ElseBB = Builder.GetInsertBlock();
+
+    // Deal with |MergeBB|.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.MergeBB);
+    BasicBlockStack.pop();
+    BasicBlockStack.push(CurrentIfBlock.MergeBB);
+    Builder.SetInsertPoint(CurrentIfBlock.MergeBB);
+
+    // Create PHI node.
+    PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
+    PHN->addIncoming(ProduceNumber(1), CurrentIfBlock.ThenBB);
+    PHN->addIncoming(ProduceNumber(2), CurrentIfBlock.ElseBB);
+  }
+
   static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
     Function* function = FunctionTable[name];
     return Builder.CreateCall(function, args, regName);
   }
 
-  static Value* CastFloatToInt(Value* input, const std::string& currentFunction, const std::string& regName) {
+  static Value* ToBool(Value* input) {
+    if (input->getType()->isDoubleTy())
+      return CastFloatToBool(input);
+    else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
+      return CastIntegerToBool(input);
+
+    // Assert: getBitWidth == 1 (already a bool).
+    return input;
+  }
+
+  static Value* CastFloatToInt(Value* input) {
+    // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
     }
 
-    return new FPToSIInst(input, Type::getInt32Ty(TheContext), regName, BB);
+    return new FPToSIInst(input, Type::getInt32Ty(TheContext), "float-to-integer", BB);
   }
 
+  static Value* CastIntegerToFloat(Value* input) {
+    // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
+    BasicBlock* BB = BasicBlockStack.top();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
+  }
+
+  static Value* CastFloatToBool(Value* input) {
+    BasicBlock* BB = BasicBlockStack.top();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return Builder.CreateFCmpONE(input, ProduceNumber(0.0), "float-to-bool");
+  }
+
+  static Value* CastIntegerToBool(Value* input) {
+    BasicBlock* BB = BasicBlockStack.top();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceNumber(0), "integer-to-bool");
+  }
+
+  // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
   static Value* GetVariable(const std::string& name) {
     if (LocalVariables.find(name) == LocalVariables.end()) {
       std::cout << "Could not find variable with name: " << name << std::endl;
