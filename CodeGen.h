@@ -117,17 +117,17 @@ public:
       arg.setName(arguments[i++].first);
     }
 
-    // Create BasicBlock to start inserting function body IR into; the BasicBlock
-    // is inserted into the Function.
-    BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
-    Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
-
     // Add arguments to local variables.
     // Now that we're "inside" the function, we want to have access to the
     // function arguments via local variables.
     for (auto& arg: function->args()) {
       LocalVariables[arg.getName()] = &arg; // Values[argumentName] = Value*.
     }
+
+    // Create BasicBlock to start inserting function body IR into; the BasicBlock
+    // is inserted into the Function.
+    BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
+    Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
 
     FunctionTable[name] = function;
     BasicBlockStack.push(BB);

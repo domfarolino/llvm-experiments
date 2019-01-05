@@ -25,7 +25,7 @@ int main() {
         CodeGen::ReturnFrom("AdderFunction", returnValue);
         //////// END ADDER.
 
-  /////// Function takes a Integer.
+  /////// Function takes a integer.
   CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
   CodeGen::ReturnFrom("integerFunction", nullptr);
 
