@@ -85,7 +85,7 @@ public:
     TheModule->print(errs(), nullptr);
   }
 
-  static Value* ProduceNumber(double val) {
+  static Value* ProduceFloat(double val) {
     return ConstantFP::get(TheContext, APFloat(val));
   }
 
@@ -94,7 +94,7 @@ public:
   }
 
   static Value* ProduceBool(bool val) {
-    return Builder.CreateFCmpONE(ProduceNumber(val), ProduceNumber(0));
+    return Builder.CreateFCmpONE(ProduceFloat(val), ProduceFloat(0));
   }
 
   static Value* ProduceString(const std::string& str) {
@@ -223,8 +223,8 @@ public:
 
     // Create PHI node.
     PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
-    PHN->addIncoming(ProduceNumber(1), CurrentIfBlock.ThenBB);
-    PHN->addIncoming(ProduceNumber(2), CurrentIfBlock.ElseBB);
+    PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
+    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
   }
 
   static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
@@ -271,7 +271,7 @@ public:
       return nullptr;
     }
 
-    return Builder.CreateFCmpONE(input, ProduceNumber(0.0), "float-to-bool");
+    return Builder.CreateFCmpONE(input, ProduceFloat(0.0), "float-to-bool");
   }
 
   static Value* CastIntegerToBool(Value* input) {
@@ -281,7 +281,7 @@ public:
       return nullptr;
     }
 
-    return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceNumber(0), "integer-to-bool");
+    return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceFloat(0), "integer-to-bool");
   }
 
   // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.

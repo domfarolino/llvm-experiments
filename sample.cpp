@@ -51,7 +51,7 @@ int main() {
   CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
   CodeGen::ReturnFrom("stringFunction", nullptr);
 
-  Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceNumber(38), CodeGen::ProduceNumber(42)}, "calladder");
+  Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceFloat(38), CodeGen::ProduceFloat(42)}, "calladder");
   Value* castToBool = CodeGen::CastFloatToBool(adderReturn);
   CodeGen::CallFunction("boolFunction", { castToBool });
   Value* castToInt = CodeGen::CastFloatToInteger(adderReturn);
