@@ -40,6 +40,13 @@ int main() {
 
   /////// Function takes a integer.
   CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
+  CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));
+    Value* plusOne = CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1));
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("plusOne: %d\n"), plusOne });
+    CodeGen::CallFunction("integerFunction", { plusOne });
+  CodeGen::Else();
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });
+  CodeGen::EndIf();
   CodeGen::ReturnFrom("integerFunction", nullptr);
 
   /////// Function takes a float.
@@ -79,6 +86,7 @@ int main() {
   /////// CALL boolFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("boolFunction", { castToBool });
+  CodeGen::CallFunction("integerFunction", { CodeGen::ProduceInteger(0) });
 
   CodeGen::ReturnFrom("main", integerAdderReturn);
 
