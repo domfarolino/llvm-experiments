@@ -101,12 +101,30 @@ public:
     return Builder.CreateGlobalStringPtr(str);
   }
 
-  static Value* Add(Value* lhs, Value* rhs, const std::string& regName = "") {
+  // Arithmetic operators.
+  static Value* AddFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
     return Builder.CreateFAdd(lhs, rhs, regName);
   }
-
-  static Value* Subtract(Value* lhs, Value* rhs, const std::string& regName = "") {
+  static Value* AddIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateAdd(lhs, rhs, regName);
+  }
+  static Value* SubtractFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFSub(lhs, rhs, regName);
+  }
+  static Value* SubtractIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
     return Builder.CreateSub(lhs, rhs, regName);
+  }
+  static Value* MultiplyFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFMul(lhs, rhs, regName);
+  }
+  static Value* MultiplyIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateMul(lhs, rhs, regName);
+  }
+  static Value* DivideFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFDiv(lhs, rhs, regName);
+  }
+  static Value* DivideIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateSDiv(lhs, rhs, regName);
   }
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,

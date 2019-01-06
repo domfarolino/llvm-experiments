@@ -10,20 +10,33 @@ int main() {
   std::vector<std::pair<std::string, AbstractType>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
-        //////// ADDER.
-        std::vector<std::pair<std::string, AbstractType>> adderArguments = {
-          std::make_pair("left", AbstractType::Float),
-          std::make_pair("right", AbstractType::Float)
+        //////// FloatAdder.
+        std::vector<std::pair<std::string, AbstractType>> floatArguments = {
+          std::make_pair("floatLeft", AbstractType::Float),
+          std::make_pair("floatRight", AbstractType::Float)
         };
-        CodeGen::CreateFunction("AdderFunction", AbstractType::Float, adderArguments);
-        Value* returnValue = CodeGen::Add(CodeGen::GetVariable("left"), CodeGen::GetVariable("right"), "addUltimateReturn");
+        CodeGen::CreateFunction("FloatAdder", AbstractType::Float, floatArguments);
+        Value* returnValue = CodeGen::DivideFloats(CodeGen::GetVariable("floatLeft"), CodeGen::GetVariable("floatRight"), "floatAddUltimateReturn");
+
+        /////// CALL printf from FloatAdder.
+        std::vector<Value*> tmpArgs = { CodeGen::ProduceString("FloatAdder returning: %f\n"), returnValue };
+        CodeGen::CallFunction("printf", tmpArgs, "callprintf");
+        CodeGen::ReturnFrom("FloatAdder", returnValue);
+        //////// END FloatAdder.
+
+        //////// IntegerAdder.
+        std::vector<std::pair<std::string, AbstractType>> integerArguments = {
+          std::make_pair("integerLeft", AbstractType::Integer),
+          std::make_pair("integerRight", AbstractType::Integer)
+        };
+        CodeGen::CreateFunction("IntegerAdder", AbstractType::Integer, integerArguments );
+        returnValue = CodeGen::DivideIntegers(CodeGen::GetVariable("integerLeft"), CodeGen::GetVariable("integerRight"), "integerAddUltimateReturn");
 
         /////// CALL printf from AdderFunction.
-        std::vector<Value*> tmpArgs = { CodeGen::ProduceString("Adder returning: %f\n"), returnValue };
+        tmpArgs = { CodeGen::ProduceString("IntegerAdder returning: %d\n"), returnValue };
         CodeGen::CallFunction("printf", tmpArgs, "callprintf");
-
-        CodeGen::ReturnFrom("AdderFunction", returnValue);
-        //////// END ADDER.
+        CodeGen::ReturnFrom("IntegerAdder", returnValue);
+        //////// END FloatAdder.
 
   /////// Function takes a integer.
   CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
@@ -51,16 +64,19 @@ int main() {
   CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
   CodeGen::ReturnFrom("stringFunction", nullptr);
 
-  Value* adderReturn = CodeGen::CallFunction("AdderFunction", {CodeGen::ProduceFloat(38), CodeGen::ProduceFloat(42)}, "calladder");
-  Value* castToBool = CodeGen::CastFloatToBool(adderReturn);
+  Value* floatAdderReturn = CodeGen::CallFunction("FloatAdder", {CodeGen::ProduceFloat(42), CodeGen::ProduceFloat(38)}, "calladder");
+  Value* integerAdderReturn = CodeGen::CallFunction("IntegerAdder", {CodeGen::ProduceInteger(42), CodeGen::ProduceInteger(38)}, "calladder");
+
+  /////// CALL printf for {float, integer}AdderReturn values.
+  std::vector<Value*> printfArguments = { CodeGen::ProduceString("FloatAdderResult(from main): %f\n"), floatAdderReturn };
+  CodeGen::CallFunction("printf", printfArguments, "callprintfFloatAdder");
+  CodeGen::CallFunction("printf", { CodeGen::ProduceString("IntegerAdderResult(from main): %d\n"), integerAdderReturn }, "callprintfIntegerAdder");
+
+  /////// CALL boolFunction.
+  Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("boolFunction", { castToBool });
-  Value* castToInt = CodeGen::CastFloatToInteger(adderReturn);
 
-  /////// CALL printf.
-  std::vector<Value*> printfArguments = { CodeGen::ProduceString("dominicfarolino!!%d"), castToInt };
-  CodeGen::CallFunction("printf", printfArguments, "callprintf");
-
-  CodeGen::ReturnFrom("main", castToInt);
+  CodeGen::ReturnFrom("main", integerAdderReturn);
 
   CodeGen::PrintBitCode();
   return 0;
