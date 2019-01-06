@@ -72,6 +72,10 @@ int main() {
   CodeGen::CallFunction("printf", printfArguments, "callprintfFloatAdder");
   CodeGen::CallFunction("printf", { CodeGen::ProduceString("IntegerAdderResult(from main): %d\n"), integerAdderReturn }, "callprintfIntegerAdder");
 
+  /////// Use relational operators.
+  Value* relResult = CodeGen::NotEqualFloats(CodeGen::ProduceFloat(3), CodeGen::ProduceFloat(3));
+  CodeGen::CallFunction("printf", { CodeGen::ProduceString("relResult: %d\n"), relResult });
+
   /////// CALL boolFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("boolFunction", { castToBool });

@@ -127,6 +127,44 @@ public:
     return Builder.CreateSDiv(lhs, rhs, regName);
   }
 
+  // Relational operators.
+  static Value* LessThanFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpOLT(lhs, rhs, regName);
+  }
+  static Value* LessThanIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpSLT(lhs, rhs, regName);
+  }
+  static Value* LessThanOrEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpOLE(lhs, rhs, regName);
+  }
+  static Value* LessThanOrEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpSLE(lhs, rhs, regName);
+  }
+  static Value* GreaterThanFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpOGT(lhs, rhs, regName);
+  }
+  static Value* GreaterThanIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpSGT(lhs, rhs, regName);
+  }
+  static Value* GreaterThanOrEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpOGE(lhs, rhs, regName);
+  }
+  static Value* GreaterThanOrEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpSGE(lhs, rhs, regName);
+  }
+  static Value* EqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpOEQ(lhs, rhs, regName);
+  }
+  static Value* EqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpEQ(lhs, rhs, regName);
+  }
+  static Value* NotEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateFCmpONE(lhs, rhs, regName);
+  }
+  static Value* NotEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    return Builder.CreateICmpNE(lhs, rhs, regName);
+  }
+
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
   static Function* CreateFunction(const std::string& name,
