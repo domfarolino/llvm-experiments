@@ -11,19 +11,19 @@ declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
-  %calladder = call double @AdderFunction(double 3.800000e+01, double 4.200000e+01)
-  %float-to-bool = fcmp one double %calladder, 0.000000e+00
+  %calladder = call float @AdderFunction(float 3.800000e+01, float 4.200000e+01)
+  %float-to-bool = fcmp one float %calladder, 0.000000e+00
   call void @boolFunction(i1 %float-to-bool)
-  %float-to-integer = fptosi double %calladder to i32
+  %float-to-integer = fptosi float %calladder to i32
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @4, i32 0, i32 0), i32 %float-to-integer)
   ret i32 %float-to-integer
 }
 
-define double @AdderFunction(double %left, double %right) {
+define float @AdderFunction(float %left, float %right) {
 entry:
-  %addUltimateReturn = fadd double %left, %right
-  %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), double %addUltimateReturn)
-  ret double %addUltimateReturn
+  %addUltimateReturn = fadd float %left, %right
+  %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), float %addUltimateReturn)
+  ret float %addUltimateReturn
 }
 
 define void @integerFunction(i32 %integerArgument) {
@@ -31,7 +31,7 @@ entry:
   ret void
 }
 
-define void @floatFunction(double %floatArgument) {
+define void @floatFunction(float %floatArgument) {
 entry:
   ret void
 }
@@ -50,7 +50,7 @@ else:                                             ; preds = %entry
   br label %ifmerge
 
 ifmerge:                                          ; preds = %else, %then
-  %ifphi = phi double [ 1.000000e+00, %then ], [ 2.000000e+00, %else ]
+  %ifphi = phi float [ 1.000000e+00, %then ], [ 2.000000e+00, %else ]
   ret void
 }
 

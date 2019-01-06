@@ -61,7 +61,7 @@ private:
     if (abstractType == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
     else if (abstractType == AbstractType::Float)
-      return Type::getDoubleTy(TheContext);
+      return Type::getFloatTy(TheContext);
     else if (abstractType == AbstractType::Bool)
       return Type::getInt1Ty(TheContext);
     else if (abstractType == AbstractType::Char)
@@ -72,7 +72,7 @@ private:
       return Type::getVoidTy(TheContext);
 
     // Assert: This is never reached.
-    return Type::getDoubleTy(TheContext);
+    return Type::getFloatTy(TheContext);
   }
 
 public:
@@ -85,7 +85,7 @@ public:
     TheModule->print(errs(), nullptr);
   }
 
-  static Value* ProduceFloat(double val) {
+  static Value* ProduceFloat(float val) {
     return ConstantFP::get(TheContext, APFloat(val));
   }
 
@@ -222,7 +222,7 @@ public:
     Builder.SetInsertPoint(CurrentIfBlock.MergeBB);
 
     // Create PHI node.
-    PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
+    PHINode *PHN = Builder.CreatePHI(Type::getFloatTy(TheContext), 2, "ifphi");
     PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
     PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
   }
@@ -233,7 +233,7 @@ public:
   }
 
   static Value* ToBool(Value* input) {
-    if (input->getType()->isDoubleTy())
+    if (input->getType()->isFloatTy())
       return CastFloatToBool(input);
     else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
       return CastIntegerToBool(input);
@@ -261,7 +261,7 @@ public:
       return nullptr;
     }
 
-    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
+    return new SIToFPInst(input, Type::getFloatTy(TheContext), "integer-to-float", BB);
   }
 
   static Value* CastFloatToBool(Value* input) {
