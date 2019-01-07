@@ -25,23 +25,26 @@ static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
 static std::unique_ptr<Module> TheModule;
 
+struct IfBlocks {
+  Value* condition;
+  BasicBlock *ThenBB, *ElseBB, *MergeBB;
+  IfBlocks(Value* inCondition,
+           BasicBlock* inThenBB,
+           BasicBlock* inElseBB,
+           BasicBlock* inMergeBB): condition(inCondition),
+                                   ThenBB(inThenBB),
+                                   ElseBB(inElseBB),
+                                   MergeBB(inMergeBB) {}
+  IfBlocks() {}
+};
+
 // These two are essentially mimicing our abstract symbol table.
 static std::map<std::string, Value*> LocalVariables;
 static std::map<std::string, Function*> FunctionTable;
-static std::stack<BasicBlock*> BasicBlockStack;
 
-static struct IfBlock {
-  Value* condition;
-  BasicBlock *ThenBB, *ElseBB, *MergeBB;
-  IfBlock(Value* inCondition,
-          BasicBlock* inThenBB,
-          BasicBlock* inElseBB,
-          BasicBlock* inMergeBB): condition(inCondition),
-                                  ThenBB(inThenBB),
-                                  ElseBB(inElseBB),
-                                  MergeBB(inMergeBB) {}
-  IfBlock() {}
-} CurrentIfBlock;
+// These are kind of ugly...
+static std::stack<BasicBlock*> BasicBlockStack;
+static std::stack<IfBlocks> IfBlocksStack;
 
 class CodeGen {
 private:
@@ -236,7 +239,7 @@ public:
     BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", currentFunction),
                *ElseBB = BasicBlock::Create(TheContext, "else"),
                *MergeBB = BasicBlock::Create(TheContext, "ifmerge");
-    CurrentIfBlock = IfBlock(inCondition, ThenBB, ElseBB, MergeBB);
+    IfBlocksStack.push(IfBlocks(inCondition, ThenBB, ElseBB, MergeBB));
     Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
 
     // Start generating code into |ThenBB|.
@@ -250,6 +253,9 @@ public:
     // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
     // the current function's list of BasicBlocks, and start generating into
     // |ElseBB|.
+
+    // Assert: !IfBlocksStack.empty().
+    IfBlocks CurrentIfBlock = IfBlocksStack.top();
     Builder.CreateBr(CurrentIfBlock.MergeBB);
 
     // This is subtle but necessary, as 'Then' codegen can change the current
@@ -266,8 +272,13 @@ public:
   }
 
   static void EndIf() {
+    // Assert: !IfBlocksStack.empty().
+    IfBlocks CurrentIfBlock = IfBlocksStack.top();
+
     // See Else().
     Builder.CreateBr(CurrentIfBlock.MergeBB);
+
+    // Same subtle-but-necessary trick as in Else().
     CurrentIfBlock.ElseBB = Builder.GetInsertBlock();
 
     // Deal with |MergeBB|.
@@ -281,6 +292,8 @@ public:
     PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
     PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
     PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
+
+    IfBlocksStack.pop();
   }
 
   static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
