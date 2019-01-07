@@ -210,21 +210,17 @@ public:
     return function;
   }
 
-  static void ReturnFrom(const std::string& name, Value* returnValue = nullptr) {
-    if (FunctionTable.find(name) == FunctionTable.end()) {
-      std::cout << "The given function name " << name << " has not been declared" << std::endl;
-      return;
-    }
+  static void Return() {
+    Builder.CreateRetVoid();
+  }
 
-    Function* function = FunctionTable[name];
-    // Assert !BasicBlockStack.empty().
-    Builder.SetInsertPoint(BasicBlockStack.top());
-    if (function->getReturnType() == Type::getVoidTy(TheContext))
-      Builder.CreateRetVoid();
-    else
-      Builder.CreateRet(returnValue);
+  static void Return(Value* returnValue) {
+    Builder.CreateRet(returnValue);
+  }
 
-    verifyFunction(*function);
+  static void EndFunction(Value* returnValue = nullptr) {
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    verifyFunction(*currentFunction);
 
     BasicBlockStack.pop();
     BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
@@ -288,10 +284,12 @@ public:
     BasicBlockStack.push(CurrentIfBlock.MergeBB);
     Builder.SetInsertPoint(CurrentIfBlock.MergeBB);
 
-    // Create PHI node.
+    /*
+    Shouldn't need this (also it is breaking in nested ifs).
     PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
     PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
     PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
+    */
 
     IfBlocksStack.pop();
   }

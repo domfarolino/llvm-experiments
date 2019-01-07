@@ -21,7 +21,8 @@ int main() {
         /////// CALL printf from FloatAdder.
         std::vector<Value*> tmpArgs = { CodeGen::ProduceString("FloatAdder returning: %f\n"), returnValue };
         CodeGen::CallFunction("printf", tmpArgs, "callprintf");
-        CodeGen::ReturnFrom("FloatAdder", returnValue);
+        CodeGen::Return(returnValue);
+        CodeGen::EndFunction();
         //////// END FloatAdder.
 
         //////// IntegerAdder.
@@ -35,41 +36,46 @@ int main() {
         /////// CALL printf from AdderFunction.
         tmpArgs = { CodeGen::ProduceString("IntegerAdder returning: %d\n"), returnValue };
         CodeGen::CallFunction("printf", tmpArgs, "callprintf");
-        CodeGen::ReturnFrom("IntegerAdder", returnValue);
+        CodeGen::Return(returnValue);
+        CodeGen::EndFunction();
         //////// END FloatAdder.
 
   /////// Function takes a integer.
   CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
-  CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));
-    Value* plusOne = CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1));
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("plusOne: %d\n"), plusOne });
-    CodeGen::CallFunction("integerFunction", { plusOne });
-  CodeGen::Else();
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });
-  CodeGen::EndIf();
-  CodeGen::ReturnFrom("integerFunction", nullptr);
+  CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));               // if (integerArgument < 10) {
+    CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(5)));       //   if (integerArgument <= 5) {
+      CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d <= 5\n"), CodeGen::GetVariable("integerArgument")});           //     printf("%d <= 5\n", integerArgument);
+    CodeGen::Else();                                                                                                              //   else {
+      CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d > 5\n"), CodeGen::GetVariable("integerArgument")});            //     printf("%d > 5\n", integerArgument);
+    CodeGen::EndIf();                                                                                                             //   }
+    Value* plusOne = CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1));                   //   plusOne = integerArgument + 1;
+    CodeGen::CallFunction("integerFunction", { plusOne });                                                                        //   integerArgument(plusOne);
+  CodeGen::Else();                                                                                                                // } else {
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });                                              //   printf("All finished!!\n");
+  CodeGen::EndIf();                                                                                                               // }
+
+  CodeGen::Return();
+  CodeGen::EndFunction();
 
   /////// Function takes a float.
   CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_pair("floatArgument", AbstractType::Float) });
-  CodeGen::ReturnFrom("floatFunction", nullptr);
+  CodeGen::Return();
+  CodeGen::EndFunction();
 
   /////// Function takes a bool.
   CodeGen::CreateFunction("boolFunction", AbstractType::Void, { std::make_pair("boolArgument", AbstractType::Bool) });
-  CodeGen::CallFunction("printf", { CodeGen::ProduceString("boolArgument: %d\n"), CodeGen::GetVariable("boolArgument") });
-  CodeGen::IfThen(CodeGen::GetVariable("boolArgument"));
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("if -> then was executed!\n") });
-  CodeGen::Else();
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("if -> else was executed!\n") });
-  CodeGen::EndIf();
-  CodeGen::ReturnFrom("boolFunction", nullptr);
+  CodeGen::Return();
+  CodeGen::EndFunction();
 
   /////// Function takes a char.
   CodeGen::CreateFunction("charFunction", AbstractType::Void, { std::make_pair("charArgument", AbstractType::Char) });
-  CodeGen::ReturnFrom("charFunction", nullptr);
+  CodeGen::Return();
+  CodeGen::EndFunction();
 
   /////// Function takes a string.
   CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
-  CodeGen::ReturnFrom("stringFunction", nullptr);
+  CodeGen::Return();
+  CodeGen::EndFunction();
 
   Value* floatAdderReturn = CodeGen::CallFunction("FloatAdder", {CodeGen::ProduceFloat(42), CodeGen::ProduceFloat(38)}, "calladder");
   Value* integerAdderReturn = CodeGen::CallFunction("IntegerAdder", {CodeGen::ProduceInteger(42), CodeGen::ProduceInteger(38)}, "calladder");
@@ -79,16 +85,12 @@ int main() {
   CodeGen::CallFunction("printf", printfArguments, "callprintfFloatAdder");
   CodeGen::CallFunction("printf", { CodeGen::ProduceString("IntegerAdderResult(from main): %d\n"), integerAdderReturn }, "callprintfIntegerAdder");
 
-  /////// Use relational operators.
-  Value* relResult = CodeGen::NotEqualFloats(CodeGen::ProduceFloat(3), CodeGen::ProduceFloat(3));
-  CodeGen::CallFunction("printf", { CodeGen::ProduceString("relResult: %d\n"), relResult });
-
-  /////// CALL boolFunction.
+  /////// CALL integerFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
-  CodeGen::CallFunction("boolFunction", { castToBool });
   CodeGen::CallFunction("integerFunction", { CodeGen::ProduceInteger(0) });
 
-  CodeGen::ReturnFrom("main", integerAdderReturn);
+  CodeGen::Return(integerAdderReturn);
+  CodeGen::EndFunction();
 
   CodeGen::PrintBitCode();
   return 0;
