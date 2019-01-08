@@ -47,13 +47,13 @@ then:                                             ; preds = %entry
 
 then1:                                            ; preds = %then
   %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @2, i32 0, i32 0), i32 %integerArgument)
-  br label %ifmerge
+  ret void
 
 else:                                             ; preds = %then
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @3, i32 0, i32 0), i32 %integerArgument)
-  br label %ifmerge
+  ret void
 
-ifmerge:                                          ; preds = %else, %then1
+ifmerge:                                          ; No predecessors!
   %4 = add i32 %integerArgument, 1
   call void @integerFunction(i32 %4)
   br label %ifmerge3

@@ -45,8 +45,10 @@ int main() {
   CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));               // if (integerArgument < 10) {
     CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(5)));       //   if (integerArgument <= 5) {
       CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d <= 5\n"), CodeGen::GetVariable("integerArgument")});           //     printf("%d <= 5\n", integerArgument);
-    CodeGen::Else();                                                                                                              //   else {
+      CodeGen::Return();                                                                                                          //     return;
+    CodeGen::Else();                                                                                                              //   } else {
       CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d > 5\n"), CodeGen::GetVariable("integerArgument")});            //     printf("%d > 5\n", integerArgument);
+      CodeGen::Return();                                                                                                          //     return;
     CodeGen::EndIf();                                                                                                             //   }
     Value* plusOne = CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1));                   //   plusOne = integerArgument + 1;
     CodeGen::CallFunction("integerFunction", { plusOne });                                                                        //   integerArgument(plusOne);
