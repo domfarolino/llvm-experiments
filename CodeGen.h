@@ -66,7 +66,6 @@ private:
   }
 
   static void ReplaceInsertionBlock(BasicBlock* nextBlock) {
-    // ...
     BasicBlockStack.pop();
     BasicBlockStack.push(nextBlock);
     Builder.SetInsertPoint(nextBlock);
@@ -343,7 +342,7 @@ public:
   static Value* CastFloatToInteger(Value* input) {
     if (!ShouldGenerate()) return nullptr;
     // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
-    BasicBlock* BB = BasicBlockStack.top();
+    BasicBlock* BB = Builder.GetInsertBlock();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
@@ -355,7 +354,7 @@ public:
   static Value* CastIntegerToFloat(Value* input) {
     if (!ShouldGenerate()) return nullptr;
     // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
-    BasicBlock* BB = BasicBlockStack.top();
+    BasicBlock* BB = Builder.GetInsertBlock();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
@@ -366,7 +365,7 @@ public:
 
   static Value* CastFloatToBool(Value* input) {
     if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = BasicBlockStack.top();
+    BasicBlock* BB = Builder.GetInsertBlock();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
@@ -377,7 +376,7 @@ public:
 
   static Value* CastIntegerToBool(Value* input) {
     if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = BasicBlockStack.top();
+    BasicBlock* BB = Builder.GetInsertBlock();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
       return nullptr;
