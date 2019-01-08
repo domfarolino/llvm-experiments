@@ -6,11 +6,8 @@ source_filename = "Dom Sample"
 @2 = private unnamed_addr constant [9 x i8] c"%d <= 5\0A\00"
 @3 = private unnamed_addr constant [8 x i8] c"%d > 5\0A\00"
 @4 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
-@5 = private unnamed_addr constant [19 x i8] c"floatArgument: %f\0A\00"
-@6 = private unnamed_addr constant [19 x i8] c"floatArgument: %f\0A\00"
-@7 = private unnamed_addr constant [19 x i8] c"floatArgument: %f\0A\00"
-@8 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
-@9 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
+@5 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
+@6 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -18,11 +15,10 @@ define i32 @main() {
 entry:
   %calladder = call double @FloatAdder(double 4.200000e+01, double 3.800000e+01)
   %calladder1 = call i32 @IntegerAdder(i32 42, i32 38)
-  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @8, i32 0, i32 0), double %calladder)
-  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @9, i32 0, i32 0), i32 %calladder1)
+  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @5, i32 0, i32 0), double %calladder)
+  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @6, i32 0, i32 0), i32 %calladder1)
   %float-to-bool = fcmp one double %calladder, 0.000000e+00
   call void @integerFunction(i32 0)
-  call void @floatFunction(double 2.723000e+01)
   ret i32 %calladder1
 }
 
@@ -73,9 +69,9 @@ then4:                                            ; preds = %then
 else:                                             ; preds = %then
   %integerArgument6 = load i32, i32* %integerArgument1
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @3, i32 0, i32 0), i32 %integerArgument6)
-  ret void
+  br label %ifmerge
 
-ifmerge:                                          ; preds = %then4
+ifmerge:                                          ; preds = %else, %then4
   %integerArgument7 = load i32, i32* %integerArgument1
   %4 = add i32 %integerArgument7, 1
   store i32 %4, i32* %integerArgument1
@@ -95,18 +91,6 @@ define void @floatFunction(double %floatArgument) {
 entry:
   %floatArgument1 = alloca double
   store double %floatArgument, double* %floatArgument1
-  %floatArgument2 = load double, double* %floatArgument1
-  %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @5, i32 0, i32 0), double %floatArgument2)
-  %floatArgument3 = load double, double* %floatArgument1
-  %1 = fadd double %floatArgument3, 1.000000e+00
-  store double %1, double* %floatArgument1
-  %floatArgument4 = load double, double* %floatArgument1
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @6, i32 0, i32 0), double %floatArgument4)
-  %floatArgument5 = load double, double* %floatArgument1
-  %3 = fadd double %floatArgument5, 1.000000e+00
-  store double %3, double* %floatArgument1
-  %floatArgument6 = load double, double* %floatArgument1
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @7, i32 0, i32 0), double %floatArgument6)
   ret void
 }
 

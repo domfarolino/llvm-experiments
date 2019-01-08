@@ -237,9 +237,9 @@ public:
     int i = 0;
     for (auto& arg: function->args()) {
       arg.setName(arguments[i].first);
-      AllocaInst* argAlloca = CreateAllocaInEntry(arguments[i++].second, arg.getName());
-      Builder.CreateStore(&arg, argAlloca);
-      LocalVariables[arg.getName()] = argAlloca;
+      CreateVariable(/* abstractType */ arguments[i++].second,
+                     /* variableName */ arg.getName(),
+                     /* initialValue */ &arg);
     }
 
     FunctionTable[name] = function;
@@ -419,5 +419,13 @@ public:
     }
 
     Builder.CreateStore(rhs, variable);
+  }
+
+  static void CreateVariable(AbstractType abstractType, const std::string& variableName, Value* initialValue = nullptr) {
+    if (!ShouldGenerate()) return;
+    //if (!initialValue) initialValue = CreateInitialValueGivenType(abstractType);
+    AllocaInst* argAlloca = CreateAllocaInEntry(abstractType, variableName);
+    Builder.CreateStore(initialValue, argAlloca);
+    LocalVariables[variableName] = argAlloca;
   }
 };
