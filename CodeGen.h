@@ -39,7 +39,7 @@ struct IfBlocks {
 };
 
 // These two are essentially mimicing our abstract symbol table.
-static std::map<std::string, Value*> LocalVariables;
+static std::map<std::string, AllocaInst*> LocalVariables;
 static std::map<std::string, Function*> FunctionTable;
 
 // These are kind of ugly...
@@ -70,6 +70,16 @@ private:
     BasicBlockStack.push(nextBlock);
     Builder.SetInsertPoint(nextBlock);
     PendingReturn = false;
+  }
+
+  static AllocaInst* CreateAllocaInEntry(AbstractType variableType,
+                                         const std::string& variableName) {
+    // Allocates a stack variable in the current function's |entry| block.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
+                             currentFunction->getEntryBlock().begin());
+    return EntryBuilder.CreateAlloca(AbstractTypeToLLVMType(variableType), 0,
+                                     variableName.c_str());
   }
 
   static void DeclarePrintf() {
@@ -197,9 +207,9 @@ public:
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
   static void CreateFunction(const std::string& name,
-                           AbstractType abstractReturnType,
-                           std::vector<std::pair<std::string, AbstractType>> arguments,
-                           bool variadic = false) {
+                             AbstractType abstractReturnType,
+                             std::vector<std::pair<std::string, AbstractType>> arguments,
+                             bool variadic = false) {
     if (!ShouldGenerate()) return;
 
     // Create arguments prototype vector.
@@ -215,26 +225,24 @@ public:
     FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
     Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
 
-    // Name arguments.
-    int i = 0;
-    for (auto& arg: function->args()) {
-      arg.setName(arguments[i++].first);
-    }
-
-    // Add arguments to local variables.
-    // Now that we're "inside" the function, we want to have access to the
-    // function arguments via local variables.
-    for (auto& arg: function->args()) {
-      LocalVariables[arg.getName()] = &arg; // Values[argumentName] = Value*.
-    }
-
     // Create BasicBlock to start inserting function body IR into; the BasicBlock
     // is inserted into the Function.
     BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
     Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
+    BasicBlockStack.push(BB);
+
+    // Name arguments and add as local variables.
+    // Now that we're "inside" the function, we want to have access to the
+    // function arguments via local variables.
+    int i = 0;
+    for (auto& arg: function->args()) {
+      arg.setName(arguments[i].first);
+      AllocaInst* argAlloca = CreateAllocaInEntry(arguments[i++].second, arg.getName());
+      Builder.CreateStore(&arg, argAlloca);
+      LocalVariables[arg.getName()] = argAlloca;
+    }
 
     FunctionTable[name] = function;
-    BasicBlockStack.push(BB);
   }
 
   static void Return() {
@@ -393,6 +401,7 @@ public:
       return nullptr;
     }
 
-    return LocalVariables[name];
+    AllocaInst* variableAlloca = LocalVariables[name];
+    return Builder.CreateLoad(variableAlloca, name.c_str());
   }
 };
