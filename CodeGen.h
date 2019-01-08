@@ -448,6 +448,7 @@ public:
                                            AbstractTypeToLLVMType(abstractType),
                                            0, variableName.c_str());
 
+    // Assert: |initialValue| is non-null.
     Builder.CreateStore(initialValue, argAlloca);
     LocalVariables[variableName] = argAlloca;
   }
