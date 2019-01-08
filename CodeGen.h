@@ -72,14 +72,20 @@ private:
     PendingReturn = false;
   }
 
-  static AllocaInst* CreateAllocaInEntry(AbstractType variableType,
-                                         const std::string& variableName) {
-    // Allocates a stack variable in the current function's |entry| block.
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
-                             currentFunction->getEntryBlock().begin());
-    return EntryBuilder.CreateAlloca(AbstractTypeToLLVMType(variableType), 0,
-                                     variableName.c_str());
+  static Value* CreateInitialValueGivenType(AbstractType abstractType) {
+    if (abstractType == AbstractType::Integer)
+      return ProduceInteger(0);
+    else if (abstractType == AbstractType::Float)
+      return ProduceFloat(0);
+    else if (abstractType == AbstractType::Bool)
+      return ProduceBool(false);
+    else if (abstractType == AbstractType::Char)
+      return ProduceChar(0);
+    else if (abstractType == AbstractType::String)
+      return ProduceString("");
+
+    // Assert: unreached.
+    return nullptr;
   }
 
   static void DeclarePrintf() {
@@ -130,6 +136,10 @@ public:
 
   static Value* ProduceInteger(int val) {
     return ConstantInt::get(TheContext, APInt(/* nbits */ 32, /* value */ val, /* is signed */ true));
+  }
+
+  static Value* ProduceChar(char val) {
+    return ConstantInt::get(TheContext, APInt(/* nbits */ 8, /* value */ val, /* is signed */ true));
   }
 
   static Value* ProduceBool(bool val) {
@@ -421,10 +431,23 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
-  static void CreateVariable(AbstractType abstractType, const std::string& variableName, Value* initialValue = nullptr) {
+  static void CreateVariable(AbstractType abstractType,
+                             const std::string& variableName,
+                             Value* initialValue = nullptr) {
     if (!ShouldGenerate()) return;
-    //if (!initialValue) initialValue = CreateInitialValueGivenType(abstractType);
-    AllocaInst* argAlloca = CreateAllocaInEntry(abstractType, variableName);
+    // |initialValue| is not always nullptr, for example, in the case of
+    // function parameters.
+    if (!initialValue)
+      initialValue = CreateInitialValueGivenType(abstractType);
+
+    // Allocates a stack variable in the current function's |entry| block.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
+                             currentFunction->getEntryBlock().begin());
+    AllocaInst* argAlloca = EntryBuilder.CreateAlloca(
+                                           AbstractTypeToLLVMType(abstractType),
+                                           0, variableName.c_str());
+
     Builder.CreateStore(initialValue, argAlloca);
     LocalVariables[variableName] = argAlloca;
   }
