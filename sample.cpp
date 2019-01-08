@@ -45,13 +45,13 @@ int main() {
   CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));               // if (integerArgument < 10) {
     CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(5)));       //   if (integerArgument <= 5) {
       CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d <= 5\n"), CodeGen::GetVariable("integerArgument")});           //     printf("%d <= 5\n", integerArgument);
-      CodeGen::Return();                                                                                                          //     return;
+      //CodeGen::Return();                                                                                                          //     return; // just for POC.
     CodeGen::Else();                                                                                                              //   } else {
       CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d > 5\n"), CodeGen::GetVariable("integerArgument")});            //     printf("%d > 5\n", integerArgument);
-      CodeGen::Return();                                                                                                          //     return;
+      CodeGen::Return();                                                                                                          //     return; // just for POC;
     CodeGen::EndIf();                                                                                                             //   }
-    Value* plusOne = CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1));                   //   plusOne = integerArgument + 1;
-    CodeGen::CallFunction("integerFunction", { plusOne });                                                                        //   integerArgument(plusOne);
+    CodeGen::Assign("integerArgument", CodeGen::AddIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(1)));//   integerArgument = integerArgument + 1;
+    CodeGen::CallFunction("integerFunction", { CodeGen::GetVariable("integerArgument") });                                        //   integerFunction(integerArgument);
   CodeGen::Else();                                                                                                                // } else {
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });                                              //   printf("All finished!!\n");
   CodeGen::EndIf();                                                                                                               // }
@@ -61,6 +61,11 @@ int main() {
 
   /////// Function takes a float.
   CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_pair("floatArgument", AbstractType::Float) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("floatArgument: %f\n"), CodeGen::GetVariable("floatArgument") });
+    CodeGen::Assign("floatArgument", CodeGen::AddFloats(CodeGen::GetVariable("floatArgument"), CodeGen::ProduceFloat(1)));
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("floatArgument: %f\n"), CodeGen::GetVariable("floatArgument") });
+    CodeGen::Assign("floatArgument", CodeGen::AddFloats(CodeGen::GetVariable("floatArgument"), CodeGen::ProduceFloat(1)));
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("floatArgument: %f\n"), CodeGen::GetVariable("floatArgument") });
   CodeGen::Return();
   CodeGen::EndFunction();
 
@@ -90,6 +95,7 @@ int main() {
   /////// CALL integerFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("integerFunction", { CodeGen::ProduceInteger(0) });
+  CodeGen::CallFunction("floatFunction", { CodeGen::ProduceFloat(27.23) });
 
   CodeGen::Return(integerAdderReturn);
   CodeGen::EndFunction();

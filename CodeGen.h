@@ -266,6 +266,9 @@ public:
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     verifyFunction(*currentFunction);
 
+    // TODO(domfarolino): Remove parameters from |LocalVariables| map
+    // https://github.com/domfarolino/llvm-experiments/issues/13.
+
     NextBlockForInsertion();
   }
 
@@ -403,5 +406,18 @@ public:
 
     AllocaInst* variableAlloca = LocalVariables[name];
     return Builder.CreateLoad(variableAlloca, name.c_str());
+  }
+
+  // If we were to support chained assignments (x = y = 2), we may want this
+  // implementation of assign to return the rhs value.
+  static void Assign(const std::string& variableName, Value* rhs) {
+    if (!ShouldGenerate()) return;
+    AllocaInst* variable = LocalVariables[variableName];
+    if (!variable) {
+      std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
+      return;
+    }
+
+    Builder.CreateStore(rhs, variable);
   }
 };
