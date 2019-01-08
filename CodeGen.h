@@ -58,6 +58,21 @@ private:
     return !ErrorState && !PendingReturn;
   }
 
+  static void NextBlockForInsertion() {
+    BasicBlockStack.pop();
+    BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
+    Builder.SetInsertPoint(nextBlock);
+    PendingReturn = false;
+  }
+
+  static void ReplaceInsertionBlock(BasicBlock* nextBlock) {
+    // ...
+    BasicBlockStack.pop();
+    BasicBlockStack.push(nextBlock);
+    Builder.SetInsertPoint(nextBlock);
+    PendingReturn = false;
+  }
+
   static void DeclarePrintf() {
     // Set up printf argument(s).
     std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
@@ -232,6 +247,7 @@ public:
   static void Return(Value* returnValue) {
     if (!ShouldGenerate()) return;
     Builder.CreateRet(returnValue);
+    PendingReturn = true;
   }
 
   static void EndFunction(Value* returnValue = nullptr) {
@@ -243,11 +259,7 @@ public:
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     verifyFunction(*currentFunction);
 
-    BasicBlockStack.pop();
-    BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
-    Builder.SetInsertPoint(nextBlock);
-
-    PendingReturn = false;
+    NextBlockForInsertion();
   }
 
   static void IfThen(Value* inCondition) {
@@ -263,10 +275,7 @@ public:
     Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
 
     // Start generating code into |ThenBB|.
-    BasicBlockStack.pop();
-    BasicBlockStack.push(ThenBB);
-    Builder.SetInsertPoint(ThenBB);
-    PendingReturn = false;
+    ReplaceInsertionBlock(ThenBB);
   }
 
   static void Else() {
@@ -288,10 +297,7 @@ public:
     // generating into |ElseBB|.
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentIfBlock.ElseBB);
-    BasicBlockStack.pop();
-    BasicBlockStack.push(CurrentIfBlock.ElseBB);
-    Builder.SetInsertPoint(CurrentIfBlock.ElseBB);
-    PendingReturn = false;
+    ReplaceInsertionBlock(CurrentIfBlock.ElseBB);
   }
 
   static void EndIf() {
@@ -307,17 +313,12 @@ public:
     // Deal with |MergeBB|.
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentIfBlock.MergeBB);
-    BasicBlockStack.pop();
-    BasicBlockStack.push(CurrentIfBlock.MergeBB);
-    Builder.SetInsertPoint(CurrentIfBlock.MergeBB);
-    PendingReturn = false;
+    ReplaceInsertionBlock(CurrentIfBlock.MergeBB);
 
-    /*
-    Shouldn't need this (also it is breaking in nested ifs).
+    /*Shouldn't need this (also it is breaking in nested ifs).
     PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
     PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
-    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
-    */
+    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);*/
 
     IfBlocksStack.pop();
   }
