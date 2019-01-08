@@ -46,10 +46,32 @@ static std::map<std::string, Function*> FunctionTable;
 static std::stack<BasicBlock*> BasicBlockStack;
 static std::stack<IfBlocks> IfBlocksStack;
 
+bool PendingReturn = false;
+bool ErrorState = false;
+
 class CodeGen {
 private:
   // Disallow creating an instance of this class.
   CodeGen() {}
+
+  static bool ShouldGenerate() {
+    return !ErrorState && !PendingReturn;
+  }
+
+  static void NextBlockForInsertion() {
+    BasicBlockStack.pop();
+    BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
+    Builder.SetInsertPoint(nextBlock);
+    PendingReturn = false;
+  }
+
+  static void ReplaceInsertionBlock(BasicBlock* nextBlock) {
+    // ...
+    BasicBlockStack.pop();
+    BasicBlockStack.push(nextBlock);
+    Builder.SetInsertPoint(nextBlock);
+    PendingReturn = false;
+  }
 
   static void DeclarePrintf() {
     // Set up printf argument(s).
@@ -79,12 +101,17 @@ private:
   }
 
 public:
+  static void EnterErrorState() {
+    ErrorState = true;
+  }
+
   static void Setup() {
     TheModule = make_unique<Module>("Dom Sample", TheContext);
     DeclarePrintf();
   }
 
   static void PrintBitCode() {
+    if (!ShouldGenerate()) return;
     TheModule->print(errs(), nullptr);
   }
 
@@ -170,10 +197,12 @@ public:
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
-  static Function* CreateFunction(const std::string& name,
+  static void CreateFunction(const std::string& name,
                            AbstractType abstractReturnType,
                            std::vector<std::pair<std::string, AbstractType>> arguments,
                            bool variadic = false) {
+    if (!ShouldGenerate()) return;
+
     // Create arguments prototype vector.
     std::vector<Type*> argumentTypes;
     for (auto argumentPair: arguments) {
@@ -207,27 +236,34 @@ public:
 
     FunctionTable[name] = function;
     BasicBlockStack.push(BB);
-    return function;
   }
 
   static void Return() {
+    if (!ShouldGenerate()) return;
     Builder.CreateRetVoid();
+    PendingReturn = true;
   }
 
   static void Return(Value* returnValue) {
+    if (!ShouldGenerate()) return;
     Builder.CreateRet(returnValue);
+    PendingReturn = true;
   }
 
   static void EndFunction(Value* returnValue = nullptr) {
+    // We shouldn't have the full-blown |ShouldGenerate| check here, or else
+    // when we have a pending return out, we'll never be able to escape this
+    // state. Instead, we just want an |ErrorState| check so that we can
+    // "unflip" the |PendingReturn| state.
+    if (ErrorState) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     verifyFunction(*currentFunction);
 
-    BasicBlockStack.pop();
-    BasicBlock* nextBlock = BasicBlockStack.empty() ? nullptr : BasicBlockStack.top();
-    Builder.SetInsertPoint(nextBlock);
+    NextBlockForInsertion();
   }
 
   static void IfThen(Value* inCondition) {
+    if (!ShouldGenerate()) return;
     inCondition = ToBool(inCondition);
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
 
@@ -239,12 +275,11 @@ public:
     Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
 
     // Start generating code into |ThenBB|.
-    BasicBlockStack.pop();
-    BasicBlockStack.push(ThenBB);
-    Builder.SetInsertPoint(ThenBB);
+    ReplaceInsertionBlock(ThenBB);
   }
 
   static void Else() {
+    if (ErrorState) return;
     // When we're ready to generate into |ElseBB|, we have to have |ThenBB|
     // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
     // the current function's list of BasicBlocks, and start generating into
@@ -252,7 +287,7 @@ public:
 
     // Assert: !IfBlocksStack.empty().
     IfBlocks CurrentIfBlock = IfBlocksStack.top();
-    Builder.CreateBr(CurrentIfBlock.MergeBB);
+    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
 
     // This is subtle but necessary, as 'Then' codegen can change the current
     // block.
@@ -262,17 +297,15 @@ public:
     // generating into |ElseBB|.
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentIfBlock.ElseBB);
-    BasicBlockStack.pop();
-    BasicBlockStack.push(CurrentIfBlock.ElseBB);
-    Builder.SetInsertPoint(CurrentIfBlock.ElseBB);
+    ReplaceInsertionBlock(CurrentIfBlock.ElseBB);
   }
 
   static void EndIf() {
+    if (ErrorState) return;
     // Assert: !IfBlocksStack.empty().
     IfBlocks CurrentIfBlock = IfBlocksStack.top();
-
     // See Else().
-    Builder.CreateBr(CurrentIfBlock.MergeBB);
+    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
 
     // Same subtle-but-necessary trick as in Else().
     CurrentIfBlock.ElseBB = Builder.GetInsertBlock();
@@ -280,26 +313,24 @@ public:
     // Deal with |MergeBB|.
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentIfBlock.MergeBB);
-    BasicBlockStack.pop();
-    BasicBlockStack.push(CurrentIfBlock.MergeBB);
-    Builder.SetInsertPoint(CurrentIfBlock.MergeBB);
+    ReplaceInsertionBlock(CurrentIfBlock.MergeBB);
 
-    /*
-    Shouldn't need this (also it is breaking in nested ifs).
+    /*Shouldn't need this (also it is breaking in nested ifs).
     PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
     PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
-    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);
-    */
+    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);*/
 
     IfBlocksStack.pop();
   }
 
   static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     Function* function = FunctionTable[name];
     return Builder.CreateCall(function, args, regName);
   }
 
   static Value* ToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
     if (input->getType()->isDoubleTy())
       return CastFloatToBool(input);
     else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
@@ -310,6 +341,7 @@ public:
   }
 
   static Value* CastFloatToInteger(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
     // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
@@ -321,6 +353,7 @@ public:
   }
 
   static Value* CastIntegerToFloat(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
     // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
@@ -332,6 +365,7 @@ public:
   }
 
   static Value* CastFloatToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
@@ -342,6 +376,7 @@ public:
   }
 
   static Value* CastIntegerToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
     BasicBlock* BB = BasicBlockStack.top();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
@@ -353,6 +388,7 @@ public:
 
   // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
   static Value* GetVariable(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
     if (LocalVariables.find(name) == LocalVariables.end()) {
       std::cout << "Could not find variable with name: " << name << std::endl;
       return nullptr;
