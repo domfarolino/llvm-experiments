@@ -8,6 +8,7 @@ source_filename = "Dom Sample"
 @4 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
 @5 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
 @6 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
+@7 = private unnamed_addr constant [15 x i8] c"factorial: %d\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -19,69 +20,118 @@ entry:
   %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @6, i32 0, i32 0), i32 %calladder1)
   %float-to-bool = fcmp one double %calladder, 0.000000e+00
   call void @integerFunction(i32 0)
+  %0 = call i32 @factorial(i32 6)
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @7, i32 0, i32 0), i32 %0)
   ret i32 %calladder1
 }
 
 define double @FloatAdder(double %floatLeft, double %floatRight) {
 entry:
-  %floatAddUltimateReturn = fdiv double %floatLeft, %floatRight
+  %floatRight2 = alloca double
+  %floatLeft1 = alloca double
+  store double %floatLeft, double* %floatLeft1
+  store double %floatRight, double* %floatRight2
+  %floatLeft3 = load double, double* %floatLeft1
+  %floatRight4 = load double, double* %floatRight2
+  %floatAddUltimateReturn = fdiv double %floatLeft3, %floatRight4
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @0, i32 0, i32 0), double %floatAddUltimateReturn)
   ret double %floatAddUltimateReturn
 }
 
 define i32 @IntegerAdder(i32 %integerLeft, i32 %integerRight) {
 entry:
-  %integerAddUltimateReturn = sdiv i32 %integerLeft, %integerRight
+  %integerRight2 = alloca i32
+  %integerLeft1 = alloca i32
+  store i32 %integerLeft, i32* %integerLeft1
+  store i32 %integerRight, i32* %integerRight2
+  %integerLeft3 = load i32, i32* %integerLeft1
+  %integerRight4 = load i32, i32* %integerRight2
+  %integerAddUltimateReturn = sdiv i32 %integerLeft3, %integerRight4
   %callprintf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @1, i32 0, i32 0), i32 %integerAddUltimateReturn)
   ret i32 %integerAddUltimateReturn
 }
 
 define void @integerFunction(i32 %integerArgument) {
 entry:
-  %0 = icmp slt i32 %integerArgument, 10
-  br i1 %0, label %then, label %else2
+  %integerArgument1 = alloca i32
+  store i32 %integerArgument, i32* %integerArgument1
+  %integerArgument2 = load i32, i32* %integerArgument1
+  %0 = icmp slt i32 %integerArgument2, 10
+  br i1 %0, label %then, label %else9
 
 then:                                             ; preds = %entry
-  %1 = icmp sle i32 %integerArgument, 5
-  br i1 %1, label %then1, label %else
+  %integerArgument3 = load i32, i32* %integerArgument1
+  %1 = icmp sle i32 %integerArgument3, 5
+  br i1 %1, label %then4, label %else
 
-then1:                                            ; preds = %then
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @2, i32 0, i32 0), i32 %integerArgument)
-  ret void
+then4:                                            ; preds = %then
+  %integerArgument5 = load i32, i32* %integerArgument1
+  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @2, i32 0, i32 0), i32 %integerArgument5)
+  br label %ifmerge
 
 else:                                             ; preds = %then
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @3, i32 0, i32 0), i32 %integerArgument)
-  ret void
+  %integerArgument6 = load i32, i32* %integerArgument1
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @3, i32 0, i32 0), i32 %integerArgument6)
+  br label %ifmerge
 
-ifmerge:                                          ; No predecessors!
-  %4 = add i32 %integerArgument, 1
-  call void @integerFunction(i32 %4)
-  br label %ifmerge3
+ifmerge:                                          ; preds = %else, %then4
+  %integerArgument7 = load i32, i32* %integerArgument1
+  %4 = add i32 %integerArgument7, 1
+  store i32 %4, i32* %integerArgument1
+  %integerArgument8 = load i32, i32* %integerArgument1
+  call void @integerFunction(i32 %integerArgument8)
+  br label %ifmerge10
 
-else2:                                            ; preds = %entry
+else9:                                            ; preds = %entry
   %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @4, i32 0, i32 0))
-  br label %ifmerge3
+  br label %ifmerge10
 
-ifmerge3:                                         ; preds = %else2, %ifmerge
+ifmerge10:                                        ; preds = %else9, %ifmerge
   ret void
 }
 
 define void @floatFunction(double %floatArgument) {
 entry:
+  %floatArgument1 = alloca double
+  store double %floatArgument, double* %floatArgument1
   ret void
 }
 
-define void @boolFunction(i1 %boolArgument) {
+define i32 @factorial(i32 %n) {
 entry:
-  ret void
+  %n1 = alloca i32
+  store i32 %n, i32* %n1
+  %n2 = load i32, i32* %n1
+  %0 = icmp sle i32 %n2, 1
+  br i1 %0, label %then, label %else
+
+then:                                             ; preds = %entry
+  %n3 = load i32, i32* %n1
+  ret i32 %n3
+
+else:                                             ; preds = %entry
+  %n4 = load i32, i32* %n1
+  %n5 = load i32, i32* %n1
+  %1 = sub i32 %n5, 1
+  %2 = call i32 @factorial(i32 %1)
+  %3 = mul i32 %n4, %2
+  ret i32 %3
+
+ifmerge:                                          ; No predecessors!
+  %n6 = load i32, i32* %n1
+  ret i32 %n6
 }
 
 define void @charFunction(i8 %charArgument) {
 entry:
+  %charArgument1 = alloca i8
+  store i8 %charArgument, i8* %charArgument1
   ret void
 }
 
 define void @stringFunction(i8* %stringArgument) {
 entry:
+  %stringArgument1 = alloca i8*
+  store i8* %stringArgument, i8** %stringArgument1
   ret void
 }

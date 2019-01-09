@@ -39,7 +39,7 @@ struct IfBlocks {
 };
 
 // These two are essentially mimicing our abstract symbol table.
-static std::map<std::string, Value*> LocalVariables;
+static std::map<std::string, AllocaInst*> LocalVariables;
 static std::map<std::string, Function*> FunctionTable;
 
 // These are kind of ugly...
@@ -70,6 +70,22 @@ private:
     BasicBlockStack.push(nextBlock);
     Builder.SetInsertPoint(nextBlock);
     PendingReturn = false;
+  }
+
+  static Value* CreateInitialValueGivenType(AbstractType abstractType) {
+    if (abstractType == AbstractType::Integer)
+      return ProduceInteger(0);
+    else if (abstractType == AbstractType::Float)
+      return ProduceFloat(0);
+    else if (abstractType == AbstractType::Bool)
+      return ProduceBool(false);
+    else if (abstractType == AbstractType::Char)
+      return ProduceChar(0);
+    else if (abstractType == AbstractType::String)
+      return ProduceString("");
+
+    // Assert: unreached.
+    return nullptr;
   }
 
   static void DeclarePrintf() {
@@ -120,6 +136,10 @@ public:
 
   static Value* ProduceInteger(int val) {
     return ConstantInt::get(TheContext, APInt(/* nbits */ 32, /* value */ val, /* is signed */ true));
+  }
+
+  static Value* ProduceChar(char val) {
+    return ConstantInt::get(TheContext, APInt(/* nbits */ 8, /* value */ val, /* is signed */ true));
   }
 
   static Value* ProduceBool(bool val) {
@@ -197,9 +217,9 @@ public:
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
   static void CreateFunction(const std::string& name,
-                           AbstractType abstractReturnType,
-                           std::vector<std::pair<std::string, AbstractType>> arguments,
-                           bool variadic = false) {
+                             AbstractType abstractReturnType,
+                             std::vector<std::pair<std::string, AbstractType>> arguments,
+                             bool variadic = false) {
     if (!ShouldGenerate()) return;
 
     // Create arguments prototype vector.
@@ -215,26 +235,24 @@ public:
     FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
     Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
 
-    // Name arguments.
-    int i = 0;
-    for (auto& arg: function->args()) {
-      arg.setName(arguments[i++].first);
-    }
-
-    // Add arguments to local variables.
-    // Now that we're "inside" the function, we want to have access to the
-    // function arguments via local variables.
-    for (auto& arg: function->args()) {
-      LocalVariables[arg.getName()] = &arg; // Values[argumentName] = Value*.
-    }
-
     // Create BasicBlock to start inserting function body IR into; the BasicBlock
     // is inserted into the Function.
     BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
     Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
+    BasicBlockStack.push(BB);
+
+    // Name arguments and add as local variables.
+    // Now that we're "inside" the function, we want to have access to the
+    // function arguments via local variables.
+    int i = 0;
+    for (auto& arg: function->args()) {
+      arg.setName(arguments[i].first);
+      CreateVariable(/* abstractType */ arguments[i++].second,
+                     /* variableName */ arg.getName(),
+                     /* initialValue */ &arg);
+    }
 
     FunctionTable[name] = function;
-    BasicBlockStack.push(BB);
   }
 
   static void Return() {
@@ -257,6 +275,9 @@ public:
     if (ErrorState) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     verifyFunction(*currentFunction);
+
+    // TODO(domfarolino): Remove parameters from |LocalVariables| map
+    // https://github.com/domfarolino/llvm-experiments/issues/13.
 
     NextBlockForInsertion();
   }
@@ -393,6 +414,42 @@ public:
       return nullptr;
     }
 
-    return LocalVariables[name];
+    AllocaInst* variableAlloca = LocalVariables[name];
+    return Builder.CreateLoad(variableAlloca, name.c_str());
+  }
+
+  // If we were to support chained assignments (x = y = 2), we may want this
+  // implementation of assign to return the rhs value.
+  static void Assign(const std::string& variableName, Value* rhs) {
+    if (!ShouldGenerate()) return;
+    AllocaInst* variable = LocalVariables[variableName];
+    if (!variable) {
+      std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
+      return;
+    }
+
+    Builder.CreateStore(rhs, variable);
+  }
+
+  static void CreateVariable(AbstractType abstractType,
+                             const std::string& variableName,
+                             Value* initialValue = nullptr) {
+    if (!ShouldGenerate()) return;
+    // |initialValue| is not always nullptr, for example, in the case of
+    // function parameters.
+    if (!initialValue)
+      initialValue = CreateInitialValueGivenType(abstractType);
+
+    // Allocates a stack variable in the current function's |entry| block.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
+                             currentFunction->getEntryBlock().begin());
+    AllocaInst* argAlloca = EntryBuilder.CreateAlloca(
+                                           AbstractTypeToLLVMType(abstractType),
+                                           0, variableName.c_str());
+
+    // Assert: |initialValue| is non-null.
+    Builder.CreateStore(initialValue, argAlloca);
+    LocalVariables[variableName] = argAlloca;
   }
 };
