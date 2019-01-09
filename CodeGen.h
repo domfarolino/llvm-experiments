@@ -161,65 +161,85 @@ public:
 
   // Arithmetic operators.
   static Value* AddFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFAdd(lhs, rhs, regName);
   }
   static Value* AddIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateAdd(lhs, rhs, regName);
   }
   static Value* SubtractFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFSub(lhs, rhs, regName);
   }
   static Value* SubtractIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateSub(lhs, rhs, regName);
   }
   static Value* MultiplyFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFMul(lhs, rhs, regName);
   }
   static Value* MultiplyIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateMul(lhs, rhs, regName);
   }
   static Value* DivideFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFDiv(lhs, rhs, regName);
   }
   static Value* DivideIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateSDiv(lhs, rhs, regName);
   }
 
   // Relational operators.
   static Value* LessThanFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpOLT(lhs, rhs, regName);
   }
   static Value* LessThanIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpSLT(lhs, rhs, regName);
   }
   static Value* LessThanOrEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpOLE(lhs, rhs, regName);
   }
   static Value* LessThanOrEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpSLE(lhs, rhs, regName);
   }
   static Value* GreaterThanFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpOGT(lhs, rhs, regName);
   }
   static Value* GreaterThanIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpSGT(lhs, rhs, regName);
   }
   static Value* GreaterThanOrEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpOGE(lhs, rhs, regName);
   }
   static Value* GreaterThanOrEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpSGE(lhs, rhs, regName);
   }
   static Value* EqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpOEQ(lhs, rhs, regName);
   }
   static Value* EqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpEQ(lhs, rhs, regName);
   }
   static Value* NotEqualFloats(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateFCmpONE(lhs, rhs, regName);
   }
   static Value* NotEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpNE(lhs, rhs, regName);
   }
 
@@ -308,7 +328,7 @@ public:
   }
 
   static void Else() {
-    if (ErrorState) return;
+    if (ErrorState || IfBlocksStack.empty()) return;
     // When we're ready to generate into |ElseBB|, we have to have |ThenBB|
     // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
     // the current function's list of BasicBlocks, and start generating into
@@ -332,7 +352,7 @@ public:
   }
 
   static void EndIf() {
-    if (ErrorState) return;
+    if (ErrorState || IfBlocksStack.empty()) return;
     // Assert: !IfBlocksStack.empty().
     IfBlocks CurrentIfBlock = IfBlocksStack.top();
     // See Else().
@@ -491,7 +511,7 @@ public:
   }
 
   static void EndFor() {
-    if (ErrorState) return;
+    if (ErrorState || ForLoopBlocksStack.empty()) return;
     ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
 
     if (!PendingReturn) Builder.CreateBr(CurrentForLoopBlock.CondEvalBB);
