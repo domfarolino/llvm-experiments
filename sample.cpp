@@ -64,9 +64,14 @@ int main() {
   CodeGen::Return();
   CodeGen::EndFunction();
 
-  /////// Function takes a bool.
-  CodeGen::CreateFunction("boolFunction", AbstractType::Void, { std::make_pair("boolArgument", AbstractType::Bool) });
-  CodeGen::Return();
+  /////// Factorial function.
+  CodeGen::CreateFunction("factorial", AbstractType::Integer, { std::make_pair("n", AbstractType::Integer) });
+  CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1) ));
+    CodeGen::Return(CodeGen::GetVariable("n"));
+  CodeGen::Else();
+    CodeGen::Return(CodeGen::MultiplyIntegers(CodeGen::GetVariable("n"), CodeGen::CallFunction("factorial", { CodeGen::SubtractIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1)) })));
+  CodeGen::EndIf();
+  CodeGen::Return(CodeGen::GetVariable("n"));
   CodeGen::EndFunction();
 
   /////// Function takes a char.
@@ -90,6 +95,7 @@ int main() {
   /////// CALL integerFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("integerFunction", { CodeGen::ProduceInteger(0) });
+  CodeGen::CallFunction("printf", { CodeGen::ProduceString("factorial: %d\n"), CodeGen::CallFunction("factorial", { CodeGen::ProduceInteger(6) }) });
   CodeGen::Return(integerAdderReturn);
   CodeGen::EndFunction();
 

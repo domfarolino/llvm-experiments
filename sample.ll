@@ -8,6 +8,7 @@ source_filename = "Dom Sample"
 @4 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
 @5 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
 @6 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
+@7 = private unnamed_addr constant [15 x i8] c"factorial: %d\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -19,6 +20,8 @@ entry:
   %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @6, i32 0, i32 0), i32 %calladder1)
   %float-to-bool = fcmp one double %calladder, 0.000000e+00
   call void @integerFunction(i32 0)
+  %0 = call i32 @factorial(i32 6)
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @7, i32 0, i32 0), i32 %0)
   ret i32 %calladder1
 }
 
@@ -94,11 +97,29 @@ entry:
   ret void
 }
 
-define void @boolFunction(i1 %boolArgument) {
+define i32 @factorial(i32 %n) {
 entry:
-  %boolArgument1 = alloca i1
-  store i1 %boolArgument, i1* %boolArgument1
-  ret void
+  %n1 = alloca i32
+  store i32 %n, i32* %n1
+  %n2 = load i32, i32* %n1
+  %0 = icmp sle i32 %n2, 1
+  br i1 %0, label %then, label %else
+
+then:                                             ; preds = %entry
+  %n3 = load i32, i32* %n1
+  ret i32 %n3
+
+else:                                             ; preds = %entry
+  %n4 = load i32, i32* %n1
+  %n5 = load i32, i32* %n1
+  %1 = sub i32 %n5, 1
+  %2 = call i32 @factorial(i32 %1)
+  %3 = mul i32 %n4, %2
+  ret i32 %3
+
+ifmerge:                                          ; No predecessors!
+  %n6 = load i32, i32* %n1
+  ret i32 %n6
 }
 
 define void @charFunction(i8 %charArgument) {
