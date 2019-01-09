@@ -464,7 +464,6 @@ public:
     LocalVariables[variableName] = argAlloca;
   }
 
-  // TODO(domfarolino): Maybe split this up into ::For() and ::Condition() in the morning!
   static void For() {
     if (!ShouldGenerate()) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
