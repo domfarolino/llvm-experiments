@@ -65,13 +65,41 @@ int main() {
   CodeGen::EndFunction();
 
   /////// Factorial function.
-  CodeGen::CreateFunction("factorial", AbstractType::Integer, { std::make_pair("n", AbstractType::Integer) });
-  CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1) ));
-    CodeGen::Return(CodeGen::GetVariable("n"));
-  CodeGen::Else();
-    CodeGen::Return(CodeGen::MultiplyIntegers(CodeGen::GetVariable("n"), CodeGen::CallFunction("factorial", { CodeGen::SubtractIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1)) })));
-  CodeGen::EndIf();
-  CodeGen::Return(CodeGen::GetVariable("n"));
+  CodeGen::CreateFunction("fibonacci", AbstractType::Integer, { std::make_pair("n", AbstractType::Integer) });
+  CodeGen::CreateVariable(AbstractType::Integer, "first");
+  CodeGen::CreateVariable(AbstractType::Integer, "second");
+  CodeGen::CreateVariable(AbstractType::Integer, "tmp");
+  CodeGen::Assign("first", CodeGen::ProduceInteger(1));
+  CodeGen::Assign("second", CodeGen::ProduceInteger(1));
+  CodeGen::For();
+  CodeGen::ForCondition(CodeGen::GreaterThanIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1)));
+    CodeGen::Assign("tmp", CodeGen::GetVariable("first"));
+    CodeGen::Assign("first", CodeGen::GetVariable("second"));
+    CodeGen::Assign("second", CodeGen::AddIntegers(CodeGen::GetVariable("second"), CodeGen::GetVariable("tmp")));
+    CodeGen::Assign("n", CodeGen::SubtractIntegers(CodeGen::GetVariable("n"), CodeGen::ProduceInteger(1)));
+  CodeGen::EndFor();
+  CodeGen::Return(CodeGen::GetVariable("first"));
+  CodeGen::EndFunction();
+
+  /////// Function nSquared
+  CodeGen::CreateFunction("nSquared", AbstractType::Void, { std::make_pair("k", AbstractType::Integer) });
+  CodeGen::CreateVariable(AbstractType::Integer, "i");
+  CodeGen::CreateVariable(AbstractType::Integer, "j");
+
+  CodeGen::Assign("i", CodeGen::ProduceInteger(0));
+  CodeGen::For();
+  CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::GetVariable("k")));
+
+    CodeGen::Assign("j", CodeGen::ProduceInteger(0));
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("j"), CodeGen::GetVariable("i")));
+      CodeGen::CallFunction("printf", { CodeGen::ProduceString("i: %d, j: %d\n"), CodeGen::GetVariable("i"), CodeGen::GetVariable("j") });
+      CodeGen::Assign("j", CodeGen::AddIntegers(CodeGen::GetVariable("j"), CodeGen::ProduceInteger(1)));
+    CodeGen::EndFor();
+
+  CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
+  CodeGen::EndFor();
+  CodeGen::Return();
   CodeGen::EndFunction();
 
   /////// Function takes a char.
@@ -95,7 +123,8 @@ int main() {
   /////// CALL integerFunction.
   Value* castToBool = CodeGen::CastFloatToBool(floatAdderReturn);
   CodeGen::CallFunction("integerFunction", { CodeGen::ProduceInteger(0) });
-  CodeGen::CallFunction("printf", { CodeGen::ProduceString("factorial: %d\n"), CodeGen::CallFunction("factorial", { CodeGen::ProduceInteger(6) }) });
+  CodeGen::CallFunction("printf", { CodeGen::ProduceString("fibonacci: %d\n"), CodeGen::CallFunction("fibonacci", { CodeGen::ProduceInteger(6) }) });
+  CodeGen::CallFunction("nSquared", { CodeGen::ProduceInteger(7) });
   CodeGen::Return(integerAdderReturn);
   CodeGen::EndFunction();
 

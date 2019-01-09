@@ -6,9 +6,10 @@ source_filename = "Dom Sample"
 @2 = private unnamed_addr constant [9 x i8] c"%d <= 5\0A\00"
 @3 = private unnamed_addr constant [8 x i8] c"%d > 5\0A\00"
 @4 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
-@5 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
-@6 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
-@7 = private unnamed_addr constant [15 x i8] c"factorial: %d\0A\00"
+@5 = private unnamed_addr constant [14 x i8] c"i: %d, j: %d\0A\00"
+@6 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
+@7 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
+@8 = private unnamed_addr constant [15 x i8] c"fibonacci: %d\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -16,12 +17,13 @@ define i32 @main() {
 entry:
   %calladder = call double @FloatAdder(double 4.200000e+01, double 3.800000e+01)
   %calladder1 = call i32 @IntegerAdder(i32 42, i32 38)
-  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @5, i32 0, i32 0), double %calladder)
-  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @6, i32 0, i32 0), i32 %calladder1)
+  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @6, i32 0, i32 0), double %calladder)
+  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @7, i32 0, i32 0), i32 %calladder1)
   %float-to-bool = fcmp one double %calladder, 0.000000e+00
   call void @integerFunction(i32 0)
-  %0 = call i32 @factorial(i32 6)
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @7, i32 0, i32 0), i32 %0)
+  %0 = call i32 @fibonacci(i32 6)
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @8, i32 0, i32 0), i32 %0)
+  call void @nSquared(i32 7)
   ret i32 %calladder1
 }
 
@@ -97,29 +99,88 @@ entry:
   ret void
 }
 
-define i32 @factorial(i32 %n) {
+define i32 @fibonacci(i32 %n) {
 entry:
+  %tmp = alloca i32
+  %second = alloca i32
+  %first = alloca i32
   %n1 = alloca i32
   store i32 %n, i32* %n1
+  store i32 0, i32* %first
+  store i32 0, i32* %second
+  store i32 0, i32* %tmp
+  store i32 1, i32* %first
+  store i32 1, i32* %second
+  br label %condeval
+
+condeval:                                         ; preds = %loop, %entry
   %n2 = load i32, i32* %n1
-  %0 = icmp sle i32 %n2, 1
-  br i1 %0, label %then, label %else
+  %0 = icmp sgt i32 %n2, 1
+  br i1 %0, label %loop, label %postloop
 
-then:                                             ; preds = %entry
-  %n3 = load i32, i32* %n1
-  ret i32 %n3
+loop:                                             ; preds = %condeval
+  %first3 = load i32, i32* %first
+  store i32 %first3, i32* %tmp
+  %second4 = load i32, i32* %second
+  store i32 %second4, i32* %first
+  %second5 = load i32, i32* %second
+  %tmp6 = load i32, i32* %tmp
+  %1 = add i32 %second5, %tmp6
+  store i32 %1, i32* %second
+  %n7 = load i32, i32* %n1
+  %2 = sub i32 %n7, 1
+  store i32 %2, i32* %n1
+  br label %condeval
 
-else:                                             ; preds = %entry
-  %n4 = load i32, i32* %n1
-  %n5 = load i32, i32* %n1
-  %1 = sub i32 %n5, 1
-  %2 = call i32 @factorial(i32 %1)
-  %3 = mul i32 %n4, %2
-  ret i32 %3
+postloop:                                         ; preds = %condeval
+  %first8 = load i32, i32* %first
+  ret i32 %first8
+}
 
-ifmerge:                                          ; No predecessors!
-  %n6 = load i32, i32* %n1
-  ret i32 %n6
+define void @nSquared(i32 %k) {
+entry:
+  %j = alloca i32
+  %i = alloca i32
+  %k1 = alloca i32
+  store i32 %k, i32* %k1
+  store i32 0, i32* %i
+  store i32 0, i32* %j
+  store i32 0, i32* %i
+  br label %condeval
+
+condeval:                                         ; preds = %postloop, %entry
+  %i2 = load i32, i32* %i
+  %k3 = load i32, i32* %k1
+  %0 = icmp slt i32 %i2, %k3
+  br i1 %0, label %loop, label %postloop12
+
+loop:                                             ; preds = %condeval
+  store i32 0, i32* %j
+  br label %condeval4
+
+condeval4:                                        ; preds = %loop7, %loop
+  %j5 = load i32, i32* %j
+  %i6 = load i32, i32* %i
+  %1 = icmp sle i32 %j5, %i6
+  br i1 %1, label %loop7, label %postloop
+
+loop7:                                            ; preds = %condeval4
+  %i8 = load i32, i32* %i
+  %j9 = load i32, i32* %j
+  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @5, i32 0, i32 0), i32 %i8, i32 %j9)
+  %j10 = load i32, i32* %j
+  %3 = add i32 %j10, 1
+  store i32 %3, i32* %j
+  br label %condeval4
+
+postloop:                                         ; preds = %condeval4
+  %i11 = load i32, i32* %i
+  %4 = add i32 %i11, 1
+  store i32 %4, i32* %i
+  br label %condeval
+
+postloop12:                                       ; preds = %condeval
+  ret void
 }
 
 define void @charFunction(i8 %charArgument) {

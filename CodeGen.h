@@ -26,16 +26,24 @@ static IRBuilder<> Builder(TheContext);
 static std::unique_ptr<Module> TheModule;
 
 struct IfBlocks {
-  Value* condition;
+  Value* Condition;
   BasicBlock *ThenBB, *ElseBB, *MergeBB;
   IfBlocks(Value* inCondition,
            BasicBlock* inThenBB,
            BasicBlock* inElseBB,
-           BasicBlock* inMergeBB): condition(inCondition),
+           BasicBlock* inMergeBB): Condition(inCondition),
                                    ThenBB(inThenBB),
                                    ElseBB(inElseBB),
                                    MergeBB(inMergeBB) {}
-  IfBlocks() {}
+};
+
+struct ForLoopBlocks {
+  BasicBlock *CondEvalBB, *LoopBB, *PostLoopBB;
+  ForLoopBlocks(BasicBlock* inCondEvalBB,
+                BasicBlock* inLoopBB,
+                BasicBlock* inPostLoopBB): CondEvalBB(inCondEvalBB),
+                                           LoopBB(inLoopBB),
+                                           PostLoopBB(inPostLoopBB) {}
 };
 
 // These two are essentially mimicing our abstract symbol table.
@@ -45,6 +53,7 @@ static std::map<std::string, Function*> FunctionTable;
 // These are kind of ugly...
 static std::stack<BasicBlock*> BasicBlockStack;
 static std::stack<IfBlocks> IfBlocksStack;
+static std::stack<ForLoopBlocks> ForLoopBlocksStack;
 
 bool PendingReturn = false;
 bool ErrorState = false;
@@ -311,6 +320,8 @@ public:
 
     // This is subtle but necessary, as 'Then' codegen can change the current
     // block.
+    // TODO(domfarolino): Can I get rid of this now that we're not using a PHI
+    // node?
     CurrentIfBlock.ThenBB = Builder.GetInsertBlock();
 
     // Push |ElseBB| to |currentFunction|'s list of BasicBlocks, and start
@@ -451,5 +462,46 @@ public:
     // Assert: |initialValue| is non-null.
     Builder.CreateStore(initialValue, argAlloca);
     LocalVariables[variableName] = argAlloca;
+  }
+
+  // TODO(domfarolino): Maybe split this up into ::For() and ::Condition() in the morning!
+  static void For() {
+    if (!ShouldGenerate()) return;
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+
+    BasicBlock *CondEvalBB = BasicBlock::Create(TheContext, "condeval", currentFunction),
+               *LoopBB = BasicBlock::Create(TheContext, "loop"),
+               *PostLoopBB = BasicBlock::Create(TheContext, "postloop");
+    ForLoopBlocksStack.push(ForLoopBlocks(CondEvalBB, LoopBB, PostLoopBB));
+
+    // Start generating code into |CondEvalBB|.
+    Builder.CreateBr(CondEvalBB);
+    ReplaceInsertionBlock(CondEvalBB);
+  }
+
+  static void ForCondition(Value* inCondition) {
+    if (!ShouldGenerate()) return;
+    inCondition = ToBool(inCondition);
+    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.LoopBB);
+
+    // Start generating code into |LoopBB|.
+    Builder.CreateCondBr(inCondition, CurrentForLoopBlock.LoopBB, CurrentForLoopBlock.PostLoopBB);
+    ReplaceInsertionBlock(CurrentForLoopBlock.LoopBB);
+  }
+
+  static void EndFor() {
+    if (ErrorState) return;
+    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
+
+    if (!PendingReturn) Builder.CreateBr(CurrentForLoopBlock.CondEvalBB);
+
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.PostLoopBB);
+
+    // Start generating post-loop code into |PostLoopBB|.
+    ReplaceInsertionBlock(CurrentForLoopBlock.PostLoopBB);
+    ForLoopBlocksStack.pop();
   }
 };
