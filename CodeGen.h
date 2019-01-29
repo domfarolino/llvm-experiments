@@ -1,5 +1,6 @@
 #include <map>
 #include <stack>
+#include <vector>
 #include <utility> // for std::pair.
 
 #include "llvm/IR/Verifier.h"
@@ -44,6 +45,11 @@ struct ForLoopBlocks {
                 BasicBlock* inPostLoopBB): CondEvalBB(inCondEvalBB),
                                            LoopBB(inLoopBB),
                                            PostLoopBB(inPostLoopBB) {}
+};
+
+struct FunctionDeclaration {
+  Function* function;
+  std::vector<AllocaInst*> arguments;
 };
 
 // These two are essentially mimicing our abstract symbol table.
@@ -304,12 +310,15 @@ public:
   //   - All of the parameter AllocaInst*s
   // ...so we can return this all to the compiler. See
   // https://github.com/domfarolino/llvm-experiments/issues/24.
-  static Function* CreateFunction(const std::string& name,
+  static FunctionDeclaration CreateFunction(const std::string& name,
                                   AbstractType abstractReturnType,
                                   std::vector<std::pair<std::string, AbstractType>>
                                     arguments,
                                   bool variadic = false) {
-    if (!ShouldGenerate()) return nullptr;
+    // CreateFunction must return this, so the caller can deal with the
+    // Function* and parameter AllocaInst*s appropriately.
+    FunctionDeclaration functionDeclaration;
+    if (!ShouldGenerate()) return functionDeclaration;
 
     // Create arguments prototype vector.
     std::vector<Type*> argumentTypes;
@@ -330,19 +339,23 @@ public:
     Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
     BasicBlockStack.push(BB);
 
+    functionDeclaration.function = function;
+
     // Name arguments and add as local variables.
     // Now that we're "inside" the function, we want to have access to the
     // function arguments via local variables.
     int i = 0;
     for (auto& arg: function->args()) {
       arg.setName(arguments[i].first);
-      CreateVariable(/* abstractType */ arguments[i++].second,
-                     /* variableName */ arg.getName(),
-                     /* initialValue */ &arg);
+      functionDeclaration.arguments.push_back(
+        CreateVariable(/* abstractType */ arguments[i++].second,
+                       /* variableName */ arg.getName(),
+                       /* initialValue */ &arg)
+      );
     }
 
     FunctionTable[name] = function;
-    return function;
+    return functionDeclaration;
   }
 
   static void Return() {
