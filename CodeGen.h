@@ -107,7 +107,7 @@ private:
 
   // Define the built-ins, as per
   // https://eecs.ceas.uc.edu/~paw/classes/eecs6083/project/projectLanguage.pdf.
-  static void DeclareBuiltIns() {
+  static void DeclareBuiltins() {
     DeclarePrintf();
 
     // Declare |putBool|.
@@ -162,7 +162,11 @@ public:
 
   static void Setup() {
     TheModule = make_unique<Module>("Dom Sample", TheContext);
-    DeclareBuiltIns();
+    // TODO(domfarolino): [COMPILER] once this is merged into the larger
+    // compiler project, we should call DeclarePrintf, and remove the
+    // DeclareBuiltins() implementation.
+    // See https://github.com/domfarolino/llvm-experiments/issues/23.
+    DeclareBuiltins();
   }
 
   static void PrintBitCode() {
@@ -294,6 +298,12 @@ public:
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
+  // TODO(domfarolino): We should return some sort of structure the packages
+  // together:
+  //   - The Function*
+  //   - All of the parameter AllocaInst*s
+  // ...so we can return this all to the compiler. See
+  // https://github.com/domfarolino/llvm-experiments/issues/24.
   static Function* CreateFunction(const std::string& name,
                                   AbstractType abstractReturnType,
                                   std::vector<std::pair<std::string, AbstractType>>
@@ -432,6 +442,18 @@ public:
     return Builder.CreateCall(function, args, regName);
   }
 
+///////////////////////////////// Begin Casts /////////////////////////////////
+// This subsection consists of various casting algorithms implemented on top of
+// the LLVM builder APIs. The following casts are implemented so far:
+//   - Float   => Integer
+//   - Float   => Bool
+//   - Integer => Float
+//   - Integer => Bool
+//   - Bool    => Integer
+//   - Bool    => Float
+
+  // This function should only be called whenever the input Value* is
+  // guaranteed to be boolean-equivalent.
   static Value* ToBool(Value* input) {
     if (!ShouldGenerate()) return nullptr;
     if (input->getType()->isDoubleTy())
@@ -445,7 +467,6 @@ public:
 
   static Value* CastFloatToInteger(Value* input) {
     if (!ShouldGenerate()) return nullptr;
-    // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
     BasicBlock* BB = Builder.GetInsertBlock();
     if (!BB) {
       std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
@@ -453,18 +474,6 @@ public:
     }
 
     return new FPToSIInst(input, Type::getInt32Ty(TheContext), "float-to-integer", BB);
-  }
-
-  static Value* CastIntegerToFloat(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    // TODO(domfarolino): Maybe replace this with Builder.GetInsertBlock().
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
   }
 
   static Value* CastFloatToBool(Value* input) {
@@ -478,6 +487,17 @@ public:
     return Builder.CreateFCmpONE(input, ProduceFloat(0.0), "float-to-bool");
   }
 
+  static Value* CastIntegerToFloat(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
+  }
+
   static Value* CastIntegerToBool(Value* input) {
     if (!ShouldGenerate()) return nullptr;
     BasicBlock* BB = Builder.GetInsertBlock();
@@ -486,8 +506,35 @@ public:
       return nullptr;
     }
 
+    // TODO(domfarolino): Maybe replace this with a more straightforward cast:
+    // https://stackoverflow.com/questions/47264133/.
     return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceFloat(0), "integer-to-bool");
   }
+
+  static Value* CastBoolToInteger(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return Builder.CreateZExt(input, Type::getInt32Ty(TheContext), "bool-to-integer");
+  }
+
+  static Value* CastBoolToFloat(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    // float something = integer(someBoolean);
+    return CastIntegerToFloat(CastBoolToInteger(input));
+  }
+
+////////////////////////////////// End Casts //////////////////////////////////
 
   // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
   static Value* GetVariable(const std::string& name) {
