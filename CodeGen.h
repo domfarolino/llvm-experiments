@@ -105,6 +105,37 @@ private:
     FunctionTable["printf"] = printfFunction;
   }
 
+  // Define the built-ins, as per
+  // https://eecs.ceas.uc.edu/~paw/classes/eecs6083/project/projectLanguage.pdf.
+  static void DeclareBuiltIns() {
+    DeclarePrintf();
+
+    // Declare |putBool|.
+    CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_pair("out", AbstractType::Bool) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
+    // Declare |putInteger|.
+    CodeGen::CreateFunction("putInteger", AbstractType::Void, { std::make_pair("out", AbstractType::Integer) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
+    // Declare |putFloat|.
+    CodeGen::CreateFunction("putFloat", AbstractType::Void, { std::make_pair("out", AbstractType::Float) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%f\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
+    // Declare |putString|.
+    CodeGen::CreateFunction("putString", AbstractType::Void, { std::make_pair("out", AbstractType::String) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%s\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
+    // Declare |putChar|.
+    CodeGen::CreateFunction("putChar", AbstractType::Void, { std::make_pair("out", AbstractType::Char) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%c\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+  }
+
   // Used as a helper.
   static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
     if (abstractType == AbstractType::Integer)
@@ -131,7 +162,7 @@ public:
 
   static void Setup() {
     TheModule = make_unique<Module>("Dom Sample", TheContext);
-    DeclarePrintf();
+    DeclareBuiltIns();
   }
 
   static void PrintBitCode() {
@@ -263,6 +294,10 @@ public:
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
+  // TODO(domfarolino): [COMPILER] we will need to indicate to CreateFunction
+  // that these are globally declared, so that the ScopeManager, dealt with
+  // inside of CreateFunction, will know to declare these globally. See
+  // https://github.com/domfarolino/llvm-experiments/issues/21.
   static void CreateFunction(const std::string& name,
                              AbstractType abstractReturnType,
                              std::vector<std::pair<std::string, AbstractType>> arguments,
