@@ -308,6 +308,7 @@ public:
     // TODO(domfarolino): Remove parameters from |LocalVariables| map
     // https://github.com/domfarolino/llvm-experiments/issues/13.
 
+    Return();
     NextBlockForInsertion();
   }
 

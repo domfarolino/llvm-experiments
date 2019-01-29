@@ -56,12 +56,10 @@ int main() {
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });                                              //   printf("All finished!!\n");
   CodeGen::EndIf();                                                                                                               // }
 
-  CodeGen::Return();
   CodeGen::EndFunction();
 
   /////// Function takes a float.
   CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_pair("floatArgument", AbstractType::Float) });
-  CodeGen::Return();
   CodeGen::EndFunction();
 
   /////// Factorial function.
@@ -99,17 +97,14 @@ int main() {
 
   CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
-  CodeGen::Return();
   CodeGen::EndFunction();
 
   /////// Function takes a char.
   CodeGen::CreateFunction("charFunction", AbstractType::Void, { std::make_pair("charArgument", AbstractType::Char) });
-  CodeGen::Return();
   CodeGen::EndFunction();
 
   /////// Function takes a string.
   CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
-  CodeGen::Return();
   CodeGen::EndFunction();
 
   Value* floatAdderReturn = CodeGen::CallFunction("FloatAdder", {CodeGen::ProduceFloat(42), CodeGen::ProduceFloat(38)}, "calladder");
