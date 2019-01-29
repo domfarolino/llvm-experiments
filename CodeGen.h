@@ -294,15 +294,12 @@ public:
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
-  // TODO(domfarolino): [COMPILER] we will need to indicate to CreateFunction
-  // that these are globally declared, so that the ScopeManager, dealt with
-  // inside of CreateFunction, will know to declare these globally. See
-  // https://github.com/domfarolino/llvm-experiments/issues/21.
-  static void CreateFunction(const std::string& name,
-                             AbstractType abstractReturnType,
-                             std::vector<std::pair<std::string, AbstractType>> arguments,
-                             bool variadic = false) {
-    if (!ShouldGenerate()) return;
+  static Function* CreateFunction(const std::string& name,
+                                  AbstractType abstractReturnType,
+                                  std::vector<std::pair<std::string, AbstractType>>
+                                    arguments,
+                                  bool variadic = false) {
+    if (!ShouldGenerate()) return nullptr;
 
     // Create arguments prototype vector.
     std::vector<Type*> argumentTypes;
@@ -335,6 +332,7 @@ public:
     }
 
     FunctionTable[name] = function;
+    return function;
   }
 
   static void Return() {
@@ -516,10 +514,10 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
-  static void CreateVariable(AbstractType abstractType,
-                             const std::string& variableName,
-                             Value* initialValue = nullptr) {
-    if (!ShouldGenerate()) return;
+  static AllocaInst* CreateVariable(AbstractType abstractType,
+                                    const std::string& variableName,
+                                    Value* initialValue = nullptr) {
+    if (!ShouldGenerate()) return nullptr;
     // |initialValue| is not always nullptr, for example, in the case of
     // function parameters.
     if (!initialValue)
@@ -536,6 +534,7 @@ public:
     // Assert: |initialValue| is non-null.
     Builder.CreateStore(initialValue, argAlloca);
     LocalVariables[variableName] = argAlloca;
+    return argAlloca;
   }
 
   static void For() {
