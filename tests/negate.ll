@@ -6,8 +6,8 @@ source_filename = "Dom Sample"
 @2 = private unnamed_addr constant [4 x i8] c"%f\0A\00"
 @3 = private unnamed_addr constant [4 x i8] c"%s\0A\00"
 @4 = private unnamed_addr constant [4 x i8] c"%c\0A\00"
-@5 = private unnamed_addr constant [21 x i8] c"integerArgument: %d\0A\00"
-@6 = private unnamed_addr constant [19 x i8] c"floatArgument: %f\0A\00"
+@5 = private unnamed_addr constant [17 x i8] c"integerArgument:\00"
+@6 = private unnamed_addr constant [15 x i8] c"floatArgument:\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -70,8 +70,9 @@ entry:
   %integerArgument2 = load i32, i32* %integerArgument1
   %0 = sub i32 0, %integerArgument2
   store i32 %0, i32* %integerArgument1
+  call void @putString(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @5, i32 0, i32 0))
   %integerArgument3 = load i32, i32* %integerArgument1
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @5, i32 0, i32 0), i32 %integerArgument3)
+  call void @putInteger(i32 %integerArgument3)
   ret void
 }
 
@@ -82,7 +83,8 @@ entry:
   %floatArgument2 = load double, double* %floatArgument1
   %0 = fsub double 0.000000e+00, %floatArgument2
   store double %0, double* %floatArgument1
+  call void @putString(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @6, i32 0, i32 0))
   %floatArgument3 = load double, double* %floatArgument1
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @6, i32 0, i32 0), double %floatArgument3)
+  call void @putFloat(double %floatArgument3)
   ret void
 }

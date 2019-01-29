@@ -18,9 +18,9 @@ int main() {
         CodeGen::CreateFunction("FloatAdder", AbstractType::Float, floatArguments);
         Value* returnValue = CodeGen::DivideFloats(CodeGen::GetVariable("floatLeft"), CodeGen::GetVariable("floatRight"), "floatAddUltimateReturn");
 
-        /////// CALL printf from FloatAdder.
-        std::vector<Value*> tmpArgs = { CodeGen::ProduceString("FloatAdder returning: %f\n"), returnValue };
-        CodeGen::CallFunction("printf", tmpArgs, "callprintf");
+        /////// CALL putFloat from FloatAdder.
+        CodeGen::CallFunction("putString", { CodeGen::ProduceString("FloatAdder returning:") });
+        CodeGen::CallFunction("putFloat", { returnValue });
         CodeGen::Return(returnValue);
         CodeGen::EndFunction();
         //////// END FloatAdder.
@@ -33,9 +33,9 @@ int main() {
         CodeGen::CreateFunction("IntegerAdder", AbstractType::Integer, integerArguments );
         returnValue = CodeGen::DivideIntegers(CodeGen::GetVariable("integerLeft"), CodeGen::GetVariable("integerRight"), "integerAddUltimateReturn");
 
-        /////// CALL printf from AdderFunction.
-        tmpArgs = { CodeGen::ProduceString("IntegerAdder returning: %d\n"), returnValue };
-        CodeGen::CallFunction("printf", tmpArgs, "callprintf");
+        /////// CALL putInteger from AdderFunction.
+        CodeGen::CallFunction("putString", { CodeGen::ProduceString("IntegerAdder returning:") });
+        CodeGen::CallFunction("putInteger", { returnValue });
         CodeGen::Return(returnValue);
         CodeGen::EndFunction();
         //////// END FloatAdder.
@@ -54,7 +54,7 @@ int main() {
     CodeGen::CallFunction("integerFunction", { CodeGen::GetVariable("integerArgument") });                                        //   integerFunction(integerArgument);
   CodeGen::Else();                                                                                                                // } else {
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("All finished!!\n") });                                              //   printf("All finished!!\n");
-  CodeGen::EndIf();                                                                                                               // }
+  CodeGen::EndIf();
 
   CodeGen::EndFunction();
 

@@ -1,5 +1,7 @@
-FloatAdder returning: 1.105263
-IntegerAdder returning: 1
+FloatAdder returning:
+1.105263
+IntegerAdder returning:
+1
 FloatAdderResult(from main): 1.105263
 IntegerAdderResult(from main): 1
 0 <= 5
