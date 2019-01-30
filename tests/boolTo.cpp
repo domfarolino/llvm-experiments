@@ -10,8 +10,6 @@ int main() {
   std::vector<std::pair<std::string, AbstractType>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
-  // TODO(domfarolino): In the morning when you wake up, you should write tests
-  // for the bool => * conversions so we can commit the change and close #18.
   CodeGen::CreateVariable(AbstractType::Bool, "boolVariable");
   CodeGen::CreateVariable(AbstractType::Integer, "integerVariable");
   CodeGen::CreateVariable(AbstractType::Float, "floatVariable");

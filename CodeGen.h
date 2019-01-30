@@ -49,11 +49,11 @@ struct ForLoopBlocks {
 
 struct FunctionDeclaration {
   Function* function;
-  std::vector<AllocaInst*> arguments;
+  std::vector<Value*> arguments;
 };
 
 // These two are essentially mimicing our abstract symbol table.
-static std::map<std::string, AllocaInst*> LocalVariables;
+static std::map<std::string, Value*> LocalVariables; // Value* can be a GlobalVariable* or AllocaInst*.
 static std::map<std::string, Function*> FunctionTable;
 
 // These are kind of ugly...
@@ -87,7 +87,7 @@ private:
     PendingReturn = false;
   }
 
-  static Value* CreateInitialValueGivenType(AbstractType abstractType) {
+  static Constant* CreateInitialValueGivenType(AbstractType abstractType) {
     if (abstractType == AbstractType::Integer)
       return ProduceInteger(0);
     else if (abstractType == AbstractType::Float)
@@ -142,6 +142,21 @@ private:
     CodeGen::EndFunction();
   }
 
+  // CreateVariable delegates to this.
+  // Constants don't yet support user-defined initial values.
+  static GlobalVariable* CreateGlobalVariable(AbstractType abstractType, const std::string& variableName) {
+    Constant* initialValue = CreateInitialValueGivenType(abstractType);
+    GlobalVariable* globalVariable =
+        new GlobalVariable(/* Module */ *TheModule,
+                           /* Type */ AbstractTypeToLLVMType(abstractType),
+                           /* isConstant */ false, // Not yet supported by us.
+                           /* Linkage */ GlobalValue::CommonLinkage,
+                           /* Initializer */ initialValue,
+                           /* name */ variableName.c_str());
+    LocalVariables[variableName] = globalVariable;
+    return globalVariable;
+  }
+
   // Used as a helper.
   static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
     if (abstractType == AbstractType::Integer)
@@ -180,23 +195,23 @@ public:
     TheModule->print(errs(), nullptr);
   }
 
-  static Value* ProduceFloat(double val) {
+  static Constant* ProduceFloat(double val) {
     return ConstantFP::get(TheContext, APFloat(val));
   }
 
-  static Value* ProduceInteger(int val) {
+  static Constant* ProduceInteger(int val) {
     return ConstantInt::get(TheContext, APInt(/* nbits */ 32, /* value */ val, /* is signed */ true));
   }
 
-  static Value* ProduceChar(char val) {
+  static Constant* ProduceChar(char val) {
     return ConstantInt::get(TheContext, APInt(/* nbits */ 8, /* value */ val, /* is signed */ true));
   }
 
-  static Value* ProduceBool(bool val) {
-    return Builder.CreateFCmpONE(ProduceFloat(val), ProduceFloat(0));
+  static Constant* ProduceBool(bool val) {
+    return ConstantInt::get(TheContext, APInt(/* nbits */ 1, /* value */ val, /* is signed */ true));
   }
 
-  static Value* ProduceString(const std::string& str) {
+  static Constant* ProduceString(const std::string& str) {
     return Builder.CreateGlobalStringPtr(str);
   }
 
@@ -350,6 +365,7 @@ public:
       functionDeclaration.arguments.push_back(
         CreateVariable(/* abstractType */ arguments[i++].second,
                        /* variableName */ arg.getName(),
+                       /* isGlobal     */ false,
                        /* initialValue */ &arg)
       );
     }
@@ -557,7 +573,7 @@ public:
       return nullptr;
     }
 
-    AllocaInst* variableAlloca = LocalVariables[name];
+    Value* variableAlloca = LocalVariables[name];
     return Builder.CreateLoad(variableAlloca, name.c_str());
   }
 
@@ -565,7 +581,7 @@ public:
   // implementation of assign to return the rhs value.
   static void Assign(const std::string& variableName, Value* rhs) {
     if (!ShouldGenerate()) return;
-    AllocaInst* variable = LocalVariables[variableName];
+    Value* variable = LocalVariables[variableName];
     if (!variable) {
       std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
       return;
@@ -574,10 +590,14 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
-  static AllocaInst* CreateVariable(AbstractType abstractType,
-                                    const std::string& variableName,
-                                    Value* initialValue = nullptr) {
+  static Value* CreateVariable(AbstractType abstractType,
+                               const std::string& variableName,
+                               bool isGlobal = false,
+                               Value* initialValue = nullptr) {
     if (!ShouldGenerate()) return nullptr;
+    if (isGlobal)
+      return CreateGlobalVariable(abstractType, variableName);
+
     // |initialValue| is not always nullptr, for example, in the case of
     // function parameters.
     if (!initialValue)
@@ -597,6 +617,7 @@ public:
     return argAlloca;
   }
 
+//////////////////////////////// Begin For Loop ////////////////////////////////
   static void For() {
     if (!ShouldGenerate()) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
@@ -636,4 +657,6 @@ public:
     ReplaceInsertionBlock(CurrentForLoopBlock.PostLoopBB);
     ForLoopBlocksStack.pop();
   }
+
+///////////////////////////////// End For Loop /////////////////////////////////
 };
