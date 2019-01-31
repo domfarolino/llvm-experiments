@@ -15,10 +15,15 @@ using namespace llvm;
 
 enum AbstractType {
   Integer,
+  IntegerRef,
   Float,
+  FloatRef,
   Bool,
+  BoolRef,
   Char,
+  CharRef,
   String,
+  StringRef,
   Void,
 };
 
@@ -111,10 +116,23 @@ private:
     FunctionTable["printf"] = printfFunction;
   }
 
+  static void DeclareScanf() {
+    // Set up scanf argument(s).
+    /*
+    // TODO(domfarolino): Enable this as a part of
+    // https://github.com/domfarolino/llvm-experiments/issues/22.
+    std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
+    FunctionType* scanfFunctionType = FunctionType::get(Type::getInt32Ty(TheContext), arguments, true);
+    Function* scanfFunction = Function::Create(scanfFunctionType, Function::ExternalLinkage, "scanf", TheModule.get());
+    FunctionTable["scanf"] = scanfFunction;
+    */
+  }
+
   // Define the built-ins, as per
   // https://eecs.ceas.uc.edu/~paw/classes/eecs6083/project/projectLanguage.pdf.
   static void DeclareBuiltins() {
     DeclarePrintf();
+    DeclareScanf();
 
     // Declare |putBool|.
     CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_pair("out", AbstractType::Bool) });
@@ -140,6 +158,15 @@ private:
     CodeGen::CreateFunction("putChar", AbstractType::Void, { std::make_pair("out", AbstractType::Char) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%c\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
+
+    /*
+    // TODO(domfarolino): uncomment this as a part of
+    // https://github.com/domfarolino/llvm-experiments/issues/22.
+    // Declare |getBool|.
+    CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_pair("in", AbstractType::Bool) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+    */
   }
 
   // CreateVariable delegates to this.
@@ -159,6 +186,7 @@ private:
 
   // Used as a helper.
   static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
+    // Value types.
     if (abstractType == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
     else if (abstractType == AbstractType::Float)
@@ -171,6 +199,17 @@ private:
       return Type::getInt8Ty(TheContext)->getPointerTo();
     else if (abstractType == AbstractType::Void)
       return Type::getVoidTy(TheContext);
+    // Reference (pointer) types.
+    else if (abstractType == AbstractType::IntegerRef)
+      return Type::getInt32Ty(TheContext)->getPointerTo();
+    else if (abstractType == AbstractType::FloatRef)
+      return Type::getDoubleTy(TheContext)->getPointerTo();
+    else if (abstractType == AbstractType::BoolRef)
+      return Type::getInt1Ty(TheContext)->getPointerTo();
+    else if (abstractType == AbstractType::CharRef)
+      return Type::getInt8Ty(TheContext)->getPointerTo();
+    else if (abstractType == AbstractType::StringRef)
+      return Type::getInt8Ty(TheContext)->getPointerTo()->getPointerTo();
 
     // Assert: This is never reached.
     return Type::getDoubleTy(TheContext);
@@ -565,7 +604,9 @@ public:
 
 ////////////////////////////////// End Casts //////////////////////////////////
 
-  // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
+/////////////////////////// End Variable Management ///////////////////////////
+
+  // General get-the-value-of-a-variable function.
   static Value* GetVariable(const std::string& name) {
     if (!ShouldGenerate()) return nullptr;
     if (LocalVariables.find(name) == LocalVariables.end()) {
@@ -574,11 +615,55 @@ public:
     }
 
     Value* variableAlloca = LocalVariables[name];
+    // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
     return Builder.CreateLoad(variableAlloca, name.c_str());
   }
 
-  // If we were to support chained assignments (x = y = 2), we may want this
-  // implementation of assign to return the rhs value.
+  // This is used to dereference a variable of name |name| that we have a
+  // reference to. This only does a single-dereference though, so I might have
+  // to re-think this when arrays are implemented. This should be used when the
+  // value of a reference ("out") variable is needed for something. Example:
+  // someFunc(i32* someArg) // |someArg| is an AbstractType::IntegerRef.
+  //   integer tmp = 10;
+  //   ... CodeGen::AddIntegers(CodeGen::GetVariable("tmp"),
+  //                            CodeGen::GetReferenceVariableValue("someArg"));
+  static Value* GetReferenceVariableValue(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    Value* variableAlloca = LocalVariables[name];
+    // Load variable.
+    Value* firstLoad = Builder.CreateLoad(variableAlloca, name.c_str());
+
+    // Dereference variable.
+    return Builder.CreateLoad(firstLoad);
+  }
+
+  // Similar to |GetVariable|, but instead of getting the value of a variable to
+  // be used variable, this gets a reference (pointer) to the variable |name|.
+  // It should mostly be used to pass a reference of a variable ("out" variable)
+  // to a function. Example:
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
+  //
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
+  static Value* GetVariableReference(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    return LocalVariables[name];
+  }
+
+  // If we were to support chained assignments (x = y = 2), we may want the
+  // implementations of |Assign| and |AssignReferenceVariable| to return the
+  // |rhs| value.
   static void Assign(const std::string& variableName, Value* rhs) {
     if (!ShouldGenerate()) return;
     Value* variable = LocalVariables[variableName];
@@ -590,6 +675,18 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
+  // This is used to assign the value of a reference variable |variableName| to
+  // |rhs|. It essentially is the same as |Assign|, but dereferences first.
+  static void AssignReferenceVariable(const std::string& variableName, Value* rhs) {
+    if (!ShouldGenerate()) return;
+    Value* variable = GetVariable(variableName);
+    Builder.CreateStore(rhs, variable);
+  }
+
+  // Creates a normal primitive or reference (pointer) to a primitive,
+  // optionally global. The only time |initialValue| will be passed in is when
+  // |CreateVariable| is being called from |CreateFunction|, and the argument
+  // value is the |initialValue|.
   static Value* CreateVariable(AbstractType abstractType,
                                const std::string& variableName,
                                bool isGlobal = false,
@@ -616,6 +713,8 @@ public:
     LocalVariables[variableName] = argAlloca;
     return argAlloca;
   }
+
+/////////////////////////// End Variable Management ///////////////////////////
 
 //////////////////////////////// Begin For Loop ////////////////////////////////
   static void For() {
