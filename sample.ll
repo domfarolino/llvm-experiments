@@ -2,19 +2,24 @@
 source_filename = "Dom Sample"
 
 @0 = private unnamed_addr constant [4 x i8] c"%d\0A\00"
-@1 = private unnamed_addr constant [4 x i8] c"%f\0A\00"
+@1 = private unnamed_addr constant [5 x i8] c"%lf\0A\00"
 @2 = private unnamed_addr constant [4 x i8] c"%d\0A\00"
 @3 = private unnamed_addr constant [4 x i8] c"%c\0A\00"
 @4 = private unnamed_addr constant [4 x i8] c"%s\0A\00"
-@5 = private unnamed_addr constant [22 x i8] c"FloatAdder returning:\00"
-@6 = private unnamed_addr constant [24 x i8] c"IntegerAdder returning:\00"
-@7 = private unnamed_addr constant [9 x i8] c"%d <= 5\0A\00"
-@8 = private unnamed_addr constant [8 x i8] c"%d > 5\0A\00"
-@9 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
-@10 = private unnamed_addr constant [14 x i8] c"i: %d, j: %d\0A\00"
-@11 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
-@12 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
-@13 = private unnamed_addr constant [15 x i8] c"fibonacci: %d\0A\00"
+@5 = private unnamed_addr constant [3 x i8] c"%d\00"
+@6 = private unnamed_addr constant [4 x i8] c"%lf\00"
+@7 = private unnamed_addr constant [3 x i8] c"%d\00"
+@8 = private unnamed_addr constant [4 x i8] c" %c\00"
+@9 = private unnamed_addr constant [3 x i8] c"%s\00"
+@10 = private unnamed_addr constant [22 x i8] c"FloatAdder returning:\00"
+@11 = private unnamed_addr constant [24 x i8] c"IntegerAdder returning:\00"
+@12 = private unnamed_addr constant [9 x i8] c"%d <= 5\0A\00"
+@13 = private unnamed_addr constant [8 x i8] c"%d > 5\0A\00"
+@14 = private unnamed_addr constant [16 x i8] c"All finished!!\0A\00"
+@15 = private unnamed_addr constant [14 x i8] c"i: %d, j: %d\0A\00"
+@16 = private unnamed_addr constant [33 x i8] c"FloatAdderResult(from main): %f\0A\00"
+@17 = private unnamed_addr constant [35 x i8] c"IntegerAdderResult(from main): %d\0A\00"
+@18 = private unnamed_addr constant [15 x i8] c"fibonacci: %d\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -34,7 +39,7 @@ entry:
   %out1 = alloca double
   store double %out, double* %out1
   %out2 = load double, double* %out1
-  %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), double %out2)
+  %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @1, i32 0, i32 0), double %out2)
   ret void
 }
 
@@ -65,16 +70,68 @@ entry:
   ret void
 }
 
+define void @getInteger(i32* %out) {
+entry:
+  %out1 = alloca i32*
+  store i32* %out, i32** %out1
+  %out2 = load i32*, i32** %out1
+  %0 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @5, i32 0, i32 0), i32* %out2)
+  ret void
+}
+
+define void @getFloat(double* %out) {
+entry:
+  %out1 = alloca double*
+  store double* %out, double** %out1
+  %out2 = load double*, double** %out1
+  %0 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @6, i32 0, i32 0), double* %out2)
+  ret void
+}
+
+define void @getBool(i1* %out) {
+entry:
+  %tmpInteger = alloca i32
+  %out1 = alloca i1*
+  store i1* %out, i1** %out1
+  store i32 0, i32* %tmpInteger
+  %0 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @7, i32 0, i32 0), i32* %tmpInteger)
+  %tmpInteger2 = load i32, i32* %tmpInteger
+  %integer-to-float = sitofp i32 %tmpInteger2 to double
+  %integer-to-bool = fcmp one double %integer-to-float, 0.000000e+00
+  %out3 = load i1*, i1** %out1
+  store i1 %integer-to-bool, i1* %out3
+  ret void
+}
+
+define void @getChar(i8* %out) {
+entry:
+  %out1 = alloca i8*
+  store i8* %out, i8** %out1
+  %out2 = load i8*, i8** %out1
+  %0 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @8, i32 0, i32 0), i8* %out2)
+  ret void
+}
+
+define void @getString(i8** %out) {
+entry:
+  %out1 = alloca i8**
+  store i8** %out, i8*** %out1
+  %out2 = load i8**, i8*** %out1
+  %0 = load i8*, i8** %out2
+  %1 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @9, i32 0, i32 0), i8* %0)
+  ret void
+}
+
 define i32 @main() {
 entry:
   %calladder = call double @FloatAdder(double 4.200000e+01, double 3.800000e+01)
   %calladder1 = call i32 @IntegerAdder(i32 42, i32 38)
-  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @11, i32 0, i32 0), double %calladder)
-  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @12, i32 0, i32 0), i32 %calladder1)
+  %callprintfFloatAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @16, i32 0, i32 0), double %calladder)
+  %callprintfIntegerAdder = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @17, i32 0, i32 0), i32 %calladder1)
   %float-to-bool = fcmp one double %calladder, 0.000000e+00
   call void @integerFunction(i32 0)
   %0 = call i32 @fibonacci(i32 6)
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @13, i32 0, i32 0), i32 %0)
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @18, i32 0, i32 0), i32 %0)
   call void @nSquared(i32 7)
   ret i32 %calladder1
 }
@@ -88,7 +145,7 @@ entry:
   %floatLeft3 = load double, double* %floatLeft1
   %floatRight4 = load double, double* %floatRight2
   %floatAddUltimateReturn = fdiv double %floatLeft3, %floatRight4
-  call void @putString(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @5, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @10, i32 0, i32 0))
   call void @putFloat(double %floatAddUltimateReturn)
   ret double %floatAddUltimateReturn
 }
@@ -102,7 +159,7 @@ entry:
   %integerLeft3 = load i32, i32* %integerLeft1
   %integerRight4 = load i32, i32* %integerRight2
   %integerAddUltimateReturn = sdiv i32 %integerLeft3, %integerRight4
-  call void @putString(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @6, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @11, i32 0, i32 0))
   call void @putInteger(i32 %integerAddUltimateReturn)
   ret i32 %integerAddUltimateReturn
 }
@@ -122,12 +179,12 @@ then:                                             ; preds = %entry
 
 then4:                                            ; preds = %then
   %integerArgument5 = load i32, i32* %integerArgument1
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @7, i32 0, i32 0), i32 %integerArgument5)
+  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @12, i32 0, i32 0), i32 %integerArgument5)
   br label %ifmerge
 
 else:                                             ; preds = %then
   %integerArgument6 = load i32, i32* %integerArgument1
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @8, i32 0, i32 0), i32 %integerArgument6)
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @13, i32 0, i32 0), i32 %integerArgument6)
   br label %ifmerge
 
 ifmerge:                                          ; preds = %else, %then4
@@ -139,7 +196,7 @@ ifmerge:                                          ; preds = %else, %then4
   br label %ifmerge10
 
 else9:                                            ; preds = %entry
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @9, i32 0, i32 0))
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @14, i32 0, i32 0))
   br label %ifmerge10
 
 ifmerge10:                                        ; preds = %else9, %ifmerge
@@ -221,7 +278,7 @@ condeval4:                                        ; preds = %loop7, %loop
 loop7:                                            ; preds = %condeval4
   %i8 = load i32, i32* %i
   %j9 = load i32, i32* %j
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @10, i32 0, i32 0), i32 %i8, i32 %j9)
+  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @15, i32 0, i32 0), i32 %i8, i32 %j9)
   %j10 = load i32, i32* %j
   %3 = add i32 %j10, 1
   store i32 %3, i32* %j

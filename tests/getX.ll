@@ -10,11 +10,15 @@ source_filename = "Dom Sample"
 @6 = private unnamed_addr constant [4 x i8] c"%lf\00"
 @7 = private unnamed_addr constant [3 x i8] c"%d\00"
 @8 = private unnamed_addr constant [4 x i8] c" %c\00"
-@9 = private unnamed_addr constant [18 x i8] c"Enter an integer:\00"
-@10 = private unnamed_addr constant [15 x i8] c"Enter a float:\00"
-@11 = private unnamed_addr constant [14 x i8] c"Enter a bool:\00"
-@12 = private unnamed_addr constant [14 x i8] c"Enter a char:\00"
-@13 = private unnamed_addr constant [9 x i8] c"Results:\00"
+@9 = private unnamed_addr constant [3 x i8] c"%s\00"
+@10 = private unnamed_addr constant [1 x i8] zeroinitializer
+@11 = private unnamed_addr constant [32 x i8] c"my long string of 31 characters\00"
+@12 = private unnamed_addr constant [18 x i8] c"Enter an integer:\00"
+@13 = private unnamed_addr constant [15 x i8] c"Enter a float:\00"
+@14 = private unnamed_addr constant [14 x i8] c"Enter a bool:\00"
+@15 = private unnamed_addr constant [14 x i8] c"Enter a char:\00"
+@16 = private unnamed_addr constant [16 x i8] c"Enter a string:\00"
+@17 = private unnamed_addr constant [9 x i8] c"Results:\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -107,8 +111,19 @@ entry:
   ret void
 }
 
+define void @getString(i8** %out) {
+entry:
+  %out1 = alloca i8**
+  store i8** %out, i8*** %out1
+  %out2 = load i8**, i8*** %out1
+  %0 = load i8*, i8** %out2
+  %1 = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @9, i32 0, i32 0), i8* %0)
+  ret void
+}
+
 define i32 @main() {
 entry:
+  %myString = alloca i8*
   %myChar = alloca i8
   %myBool = alloca i1
   %myFloat = alloca double
@@ -117,15 +132,19 @@ entry:
   store double 0.000000e+00, double* %myFloat
   store i1 false, i1* %myBool
   store i8 0, i8* %myChar
-  call void @putString(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @9, i32 0, i32 0))
+  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @10, i32 0, i32 0), i8** %myString
+  store i8* getelementptr inbounds ([32 x i8], [32 x i8]* @11, i32 0, i32 0), i8** %myString
+  call void @putString(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @12, i32 0, i32 0))
   call void @getInteger(i32* %myInteger)
-  call void @putString(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @10, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @13, i32 0, i32 0))
   call void @getFloat(double* %myFloat)
-  call void @putString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @11, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @14, i32 0, i32 0))
   call void @getBool(i1* %myBool)
-  call void @putString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @12, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @15, i32 0, i32 0))
   call void @getChar(i8* %myChar)
-  call void @putString(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @13, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @16, i32 0, i32 0))
+  call void @getString(i8** %myString)
+  call void @putString(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @17, i32 0, i32 0))
   %myInteger1 = load i32, i32* %myInteger
   call void @putInteger(i32 %myInteger1)
   %myFloat2 = load double, double* %myFloat
@@ -134,5 +153,7 @@ entry:
   call void @putBool(i1 %myBool3)
   %myChar4 = load i8, i8* %myChar
   call void @putChar(i8 %myChar4)
+  %myString5 = load i8*, i8** %myString
+  call void @putString(i8* %myString5)
   ret i32 0
 }

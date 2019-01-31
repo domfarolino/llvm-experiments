@@ -2,8 +2,10 @@ Enter an integer:
 Enter a float:
 Enter a bool:
 Enter a char:
+Enter a string:
 Results:
 44
 33.000000
 1
 a
+dominic

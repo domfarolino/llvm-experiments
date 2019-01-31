@@ -178,6 +178,11 @@ private:
     CodeGen::CreateFunction("getChar", AbstractType::Void, { std::make_pair("out", AbstractType::CharRef) });
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString(" %c"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
+
+    // Declare |getString|.
+    CodeGen::CreateFunction("getString", AbstractType::Void, { std::make_pair("out", AbstractType::StringRef) });
+    CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%s"), CodeGen::GetReferenceVariableValue("out") });
+    CodeGen::EndFunction();
   }
 
   // CreateVariable delegates to this.
