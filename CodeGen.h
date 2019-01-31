@@ -118,14 +118,10 @@ private:
 
   static void DeclareScanf() {
     // Set up scanf argument(s).
-    /*
-    // TODO(domfarolino): Enable this as a part of
-    // https://github.com/domfarolino/llvm-experiments/issues/22.
     std::vector<Type*> arguments(1, Type::getInt8Ty(TheContext)->getPointerTo());
     FunctionType* scanfFunctionType = FunctionType::get(Type::getInt32Ty(TheContext), arguments, true);
     Function* scanfFunction = Function::Create(scanfFunctionType, Function::ExternalLinkage, "scanf", TheModule.get());
     FunctionTable["scanf"] = scanfFunction;
-    */
   }
 
   // Define the built-ins, as per
@@ -133,11 +129,6 @@ private:
   static void DeclareBuiltins() {
     DeclarePrintf();
     DeclareScanf();
-
-    // Declare |putBool|.
-    CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_pair("out", AbstractType::Bool) });
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
-    CodeGen::EndFunction();
 
     // Declare |putInteger|.
     CodeGen::CreateFunction("putInteger", AbstractType::Void, { std::make_pair("out", AbstractType::Integer) });
@@ -149,9 +140,9 @@ private:
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%f\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
-    // Declare |putString|.
-    CodeGen::CreateFunction("putString", AbstractType::Void, { std::make_pair("out", AbstractType::String) });
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%s\n"), CodeGen::GetVariable("out") });
+    // Declare |putBool|.
+    CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_pair("out", AbstractType::Bool) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putChar|.
@@ -159,9 +150,12 @@ private:
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%c\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
+    // Declare |putString|.
+    CodeGen::CreateFunction("putString", AbstractType::Void, { std::make_pair("out", AbstractType::String) });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%s\n"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
     /*
-    // TODO(domfarolino): uncomment this as a part of
-    // https://github.com/domfarolino/llvm-experiments/issues/22.
     // Declare |getBool|.
     CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_pair("in", AbstractType::Bool) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
