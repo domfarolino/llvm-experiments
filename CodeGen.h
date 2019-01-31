@@ -137,7 +137,7 @@ private:
 
     // Declare |putFloat|.
     CodeGen::CreateFunction("putFloat", AbstractType::Void, { std::make_pair("out", AbstractType::Float) });
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%f\n"), CodeGen::GetVariable("out") });
+    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%lf\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putBool|.
@@ -155,12 +155,29 @@ private:
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%s\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
-    /*
-    // Declare |getBool|.
-    CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_pair("in", AbstractType::Bool) });
-    CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
+    // Declare |getInteger|.
+    CodeGen::CreateFunction("getInteger", AbstractType::Void, { std::make_pair("out", AbstractType::IntegerRef) });
+    CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%d"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
-    */
+
+    // Declare |getFloat|.
+    CodeGen::CreateFunction("getFloat", AbstractType::Void, { std::make_pair("out", AbstractType::FloatRef) });
+    CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%lf"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
+
+    // Declare |getBool|.
+    // This is a little more involved, because to get it to work correctly, we
+    // have to give |scanf| an integer, and then cast the integer to a bool.
+    CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_pair("out", AbstractType::BoolRef) });
+    CodeGen::CreateVariable(AbstractType::Integer, "tmpInteger");
+    CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%d"), CodeGen::GetVariableReference("tmpInteger") });
+    CodeGen::AssignReferenceVariable("out", CodeGen::CastIntegerToBool(CodeGen::GetVariable("tmpInteger")));
+    CodeGen::EndFunction();
+
+    // Declare |getChar|.
+    CodeGen::CreateFunction("getChar", AbstractType::Void, { std::make_pair("out", AbstractType::CharRef) });
+    CodeGen::CallFunction("scanf", { CodeGen::ProduceString(" %c"), CodeGen::GetVariable("out") });
+    CodeGen::EndFunction();
   }
 
   // CreateVariable delegates to this.
