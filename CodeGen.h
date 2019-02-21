@@ -374,12 +374,6 @@ public:
 
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
-  // TODO(domfarolino): We should return some sort of structure the packages
-  // together:
-  //   - The Function*
-  //   - All of the parameter AllocaInst*s
-  // ...so we can return this all to the compiler. See
-  // https://github.com/domfarolino/llvm-experiments/issues/24.
   static FunctionDeclaration CreateFunction(const std::string& name,
                                   AbstractType abstractReturnType,
                                   std::vector<std::pair<std::string, AbstractType>>
@@ -620,7 +614,7 @@ public:
 
 ////////////////////////////////// End Casts //////////////////////////////////
 
-/////////////////////////// End Variable Management ///////////////////////////
+////////////////////////// Begin Variable Management //////////////////////////
 
   // General get-the-value-of-a-variable function.
   static Value* GetVariable(const std::string& name) {
