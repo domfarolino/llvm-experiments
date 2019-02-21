@@ -35,13 +35,15 @@ purposes. It is "good enough" for now, since removing this in favor or
 executable-producing code does not actually improve the "functionality" of the code
 generator, per se.
 
-#### `Value* CodeGen::Produce${Type}(Type)`
+#### `Value* CodeGen::Produce{Type}(Type)`
 
-The `${Type}` is supposed to represent a placeholder for all of the valid types. This
+The `{Type}` is supposed to represent a placeholder for all of the valid types. This
 method takes in a C++ value for some type, and statically produces an LLVM `Value*`
 representing it. This is mostly used for static variable assignments.
 
-## Unary Operators
+## Operators
+
+### Unary Operators
 
 This section is relatively brief, as the inputs and outputs are self-explanatory.
 Provided below is a brief list of everything in this category:
@@ -53,7 +55,7 @@ Provided below is a brief list of everything in this category:
    - Produces an `fsub` instruction, subtracting the given value from `0`, thus
      negating it.
 
-## Binary Operators
+#### Binary Operators
 
 This section is relatively brief, as the inputs and outputs are self-explanatory.
 Provided below is a brief list of everything in this category:
@@ -90,9 +92,34 @@ This section contains APIs relevant to the core functionality of the code genera
 
 #### `Value* CodeGen::GetVariable(name)`
 
-As documentation in the source code indicates, this is the go-to general
-get-the-value-of-the-variable method. It takes in a string `|name|`, and returns the
-LLVM `Value*` associated with `|name|`, in the `LocalVariables` map.
+This is the go-to general get-the-value-of-the-variable method. It takes a string
+`|name|`, and creates a `load` instruction for the LLVM `Value*` associated with
+`|name|`, in the `LocalVariables` map. It returns the loaded `Value*`.
+
+This is used when passing non-reference variables to the `putX` methods, as well as
+passing variables by *value* to functions, etc.
+
+#### `Value* CodeGen::GetReferenceVariableValue(name)`
+
+A variable in some scope may be a reference variable (think, pointer), and when we
+want to use the value of a reference variable we effectively need to *"dereference*" it.
+That's what this method does:
+
+ - Takes in the name of a reference variable
+ - Creates a `load` instruction for the variable reference
+ - Creates a `load` instruction for the _loaded_ variable reference
+ - Returns the result of the step immediately above, an LLVM `Value*`
+
+This is used when passing reference-variables to the `putX` methods, as well as
+passing variables by *reference* to functions, etc.
+
+#### `Value* CodeGen::GetVariableReference(name)`
+
+#### `Value* CodeGen::Assign(name)`
+
+#### `Value* CodeGen::AssignReferenceVariable(name)`
+
+#### `Value* CodeGen::CreateVariable(type, name, global, init_val)`
 
 # Provided Tests
 

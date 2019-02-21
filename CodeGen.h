@@ -372,6 +372,120 @@ public:
     return Builder.CreateICmpNE(lhs, rhs, regName);
   }
 
+////////////////////////// Begin Variable Management //////////////////////////
+
+  // General get-the-value-of-a-variable function.
+  static Value* GetVariable(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    Value* variableAlloca = LocalVariables[name];
+    // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
+    return Builder.CreateLoad(variableAlloca, name.c_str());
+  }
+
+  // This is used to dereference a variable of name |name| that we have a
+  // reference to. This only does a single-dereference though, so I might have
+  // to re-think this when arrays are implemented. This should be used when the
+  // value of a reference ("out") variable is needed for something. Example:
+  // someFunc(i32* someArg) // |someArg| is an AbstractType::IntegerRef.
+  //   integer tmp = 10;
+  //   ... CodeGen::AddIntegers(CodeGen::GetVariable("tmp"),
+  //                            CodeGen::GetReferenceVariableValue("someArg"));
+  static Value* GetReferenceVariableValue(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    Value* variableAlloca = LocalVariables[name];
+    // Load variable.
+    Value* firstLoad = Builder.CreateLoad(variableAlloca, name.c_str());
+
+    // Dereference variable.
+    return Builder.CreateLoad(firstLoad);
+  }
+
+  // Similar to |GetVariable|, but instead of getting the value of a variable to
+  // be used variable, this gets a reference (pointer) to the variable |name|.
+  // It should mostly be used to pass a reference of a variable ("out" variable)
+  // to a function. Example:
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
+  //
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
+  static Value* GetVariableReference(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    return LocalVariables[name];
+  }
+
+  // If we were to support chained assignments (x = y = 2), we may want the
+  // implementations of |Assign| and |AssignReferenceVariable| to return the
+  // |rhs| value.
+  static void Assign(const std::string& variableName, Value* rhs) {
+    if (!ShouldGenerate()) return;
+    Value* variable = LocalVariables[variableName];
+    if (!variable) {
+      std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
+      return;
+    }
+
+    Builder.CreateStore(rhs, variable);
+  }
+
+  // This is used to assign the value of a reference variable |variableName| to
+  // |rhs|. It essentially is the same as |Assign|, but dereferences first.
+  static void AssignReferenceVariable(const std::string& variableName, Value* rhs) {
+    if (!ShouldGenerate()) return;
+    Value* variable = GetVariable(variableName);
+    Builder.CreateStore(rhs, variable);
+  }
+
+  // Creates a normal primitive or reference (pointer) to a primitive,
+  // optionally global. The only time |initialValue| will be passed in is when
+  // |CreateVariable| is being called from |CreateFunction|, and the argument
+  // value is the |initialValue|.
+  static Value* CreateVariable(AbstractType abstractType,
+                               const std::string& variableName,
+                               bool isGlobal = false,
+                               Value* initialValue = nullptr) {
+    if (!ShouldGenerate()) return nullptr;
+    if (isGlobal)
+      return CreateGlobalVariable(abstractType, variableName);
+
+    // |initialValue| is not always nullptr, for example, in the case of
+    // function parameters.
+    if (!initialValue)
+      initialValue = CreateInitialValueGivenType(abstractType);
+
+    // Allocates a stack variable in the current function's |entry| block.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
+                             currentFunction->getEntryBlock().begin());
+    AllocaInst* argAlloca = EntryBuilder.CreateAlloca(
+                                           AbstractTypeToLLVMType(abstractType),
+                                           0, variableName.c_str());
+
+    // Assert: |initialValue| is non-null.
+    Builder.CreateStore(initialValue, argAlloca);
+    LocalVariables[variableName] = argAlloca;
+    return argAlloca;
+  }
+
+/////////////////////////// End Variable Management ///////////////////////////
+
+////////////////// Begin Function & Control Flow Management ///////////////////
+
   // Creates an LLVM Function* prototype, generates an IR declaration for it,
   // and adds it to the FunctionTable.
   static FunctionDeclaration CreateFunction(const std::string& name,
@@ -520,6 +634,8 @@ public:
     return Builder.CreateCall(function, args, regName);
   }
 
+/////////////////// End Function & Control Flow Management ////////////////////
+
 ///////////////////////////////// Begin Casts /////////////////////////////////
 // This subsection consists of various casting algorithms implemented on top of
 // the LLVM builder APIs. The following casts are implemented so far:
@@ -613,118 +729,6 @@ public:
   }
 
 ////////////////////////////////// End Casts //////////////////////////////////
-
-////////////////////////// Begin Variable Management //////////////////////////
-
-  // General get-the-value-of-a-variable function.
-  static Value* GetVariable(const std::string& name) {
-    if (!ShouldGenerate()) return nullptr;
-    if (LocalVariables.find(name) == LocalVariables.end()) {
-      std::cout << "Could not find variable with name: " << name << std::endl;
-      return nullptr;
-    }
-
-    Value* variableAlloca = LocalVariables[name];
-    // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
-    return Builder.CreateLoad(variableAlloca, name.c_str());
-  }
-
-  // This is used to dereference a variable of name |name| that we have a
-  // reference to. This only does a single-dereference though, so I might have
-  // to re-think this when arrays are implemented. This should be used when the
-  // value of a reference ("out") variable is needed for something. Example:
-  // someFunc(i32* someArg) // |someArg| is an AbstractType::IntegerRef.
-  //   integer tmp = 10;
-  //   ... CodeGen::AddIntegers(CodeGen::GetVariable("tmp"),
-  //                            CodeGen::GetReferenceVariableValue("someArg"));
-  static Value* GetReferenceVariableValue(const std::string& name) {
-    if (!ShouldGenerate()) return nullptr;
-    if (LocalVariables.find(name) == LocalVariables.end()) {
-      std::cout << "Could not find variable with name: " << name << std::endl;
-      return nullptr;
-    }
-
-    Value* variableAlloca = LocalVariables[name];
-    // Load variable.
-    Value* firstLoad = Builder.CreateLoad(variableAlloca, name.c_str());
-
-    // Dereference variable.
-    return Builder.CreateLoad(firstLoad);
-  }
-
-  // Similar to |GetVariable|, but instead of getting the value of a variable to
-  // be used variable, this gets a reference (pointer) to the variable |name|.
-  // It should mostly be used to pass a reference of a variable ("out" variable)
-  // to a function. Example:
-  // CodeGen::CallFunction("someFunc",
-  //   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
-  //
-  // CodeGen::CallFunction("someFunc",
-  //   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
-  static Value* GetVariableReference(const std::string& name) {
-    if (!ShouldGenerate()) return nullptr;
-    if (LocalVariables.find(name) == LocalVariables.end()) {
-      std::cout << "Could not find variable with name: " << name << std::endl;
-      return nullptr;
-    }
-
-    return LocalVariables[name];
-  }
-
-  // If we were to support chained assignments (x = y = 2), we may want the
-  // implementations of |Assign| and |AssignReferenceVariable| to return the
-  // |rhs| value.
-  static void Assign(const std::string& variableName, Value* rhs) {
-    if (!ShouldGenerate()) return;
-    Value* variable = LocalVariables[variableName];
-    if (!variable) {
-      std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
-      return;
-    }
-
-    Builder.CreateStore(rhs, variable);
-  }
-
-  // This is used to assign the value of a reference variable |variableName| to
-  // |rhs|. It essentially is the same as |Assign|, but dereferences first.
-  static void AssignReferenceVariable(const std::string& variableName, Value* rhs) {
-    if (!ShouldGenerate()) return;
-    Value* variable = GetVariable(variableName);
-    Builder.CreateStore(rhs, variable);
-  }
-
-  // Creates a normal primitive or reference (pointer) to a primitive,
-  // optionally global. The only time |initialValue| will be passed in is when
-  // |CreateVariable| is being called from |CreateFunction|, and the argument
-  // value is the |initialValue|.
-  static Value* CreateVariable(AbstractType abstractType,
-                               const std::string& variableName,
-                               bool isGlobal = false,
-                               Value* initialValue = nullptr) {
-    if (!ShouldGenerate()) return nullptr;
-    if (isGlobal)
-      return CreateGlobalVariable(abstractType, variableName);
-
-    // |initialValue| is not always nullptr, for example, in the case of
-    // function parameters.
-    if (!initialValue)
-      initialValue = CreateInitialValueGivenType(abstractType);
-
-    // Allocates a stack variable in the current function's |entry| block.
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
-                             currentFunction->getEntryBlock().begin());
-    AllocaInst* argAlloca = EntryBuilder.CreateAlloca(
-                                           AbstractTypeToLLVMType(abstractType),
-                                           0, variableName.c_str());
-
-    // Assert: |initialValue| is non-null.
-    Builder.CreateStore(initialValue, argAlloca);
-    LocalVariables[variableName] = argAlloca;
-    return argAlloca;
-  }
-
-/////////////////////////// End Variable Management ///////////////////////////
 
 //////////////////////////////// Begin For Loop ////////////////////////////////
   static void For() {
