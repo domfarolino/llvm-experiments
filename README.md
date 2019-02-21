@@ -21,13 +21,13 @@ This section contains various documentation bits for the `CodeGen::` APIs.
 This section contains APIs that don't often get called, and instead deal mostly with
 setup, teardown, or "administrative" tasks often unrelated to core functionality.
 
-### `void CodeGen::Setup()`
+#### `void CodeGen::Setup()`
 
 This should be called once in the beginning of `CodeGen`'s life. It needs modified,
 however, before being merged into the [compiler](https://github.com/domfarolino/compiler.git).
 See https://github.com/domfarolino/llvm-experiments/issues/23.
 
-### `void CodeGen::PrintBitCode()`
+#### `void CodeGen::PrintBitCode()`
 
 This is a temporary method that likely won't exist when this project is merged into
 the compiler. For now it is used to emit LLVM bitcode to stdout, for basic testing
@@ -35,7 +35,7 @@ purposes. It is "good enough" for now, since removing this in favor or
 executable-producing code does not actually improve the "functionality" of the code
 generator, per se.
 
-### `Value* CodeGen::Produce${Type}(Type)`
+#### `Value* CodeGen::Produce${Type}(Type)`
 
 The `${Type}` is supposed to represent a placeholder for all of the valid types. This
 method takes in a C++ value for some type, and statically produces an LLVM `Value*`
@@ -88,7 +88,7 @@ Relational operators:
 
 This section contains APIs relevant to the core functionality of the code generator.
 
-### `Value* CodeGen::GetVariable(name)`
+#### `Value* CodeGen::GetVariable(name)`
 
 As documentation in the source code indicates, this is the go-to general
 get-the-value-of-the-variable method. It takes in a string `|name|`, and returns the
