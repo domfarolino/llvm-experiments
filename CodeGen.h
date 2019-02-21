@@ -372,255 +372,7 @@ public:
     return Builder.CreateICmpNE(lhs, rhs, regName);
   }
 
-  // Creates an LLVM Function* prototype, generates an IR declaration for it,
-  // and adds it to the FunctionTable.
-  // TODO(domfarolino): We should return some sort of structure the packages
-  // together:
-  //   - The Function*
-  //   - All of the parameter AllocaInst*s
-  // ...so we can return this all to the compiler. See
-  // https://github.com/domfarolino/llvm-experiments/issues/24.
-  static FunctionDeclaration CreateFunction(const std::string& name,
-                                  AbstractType abstractReturnType,
-                                  std::vector<std::pair<std::string, AbstractType>>
-                                    arguments,
-                                  bool variadic = false) {
-    // CreateFunction must return this, so the caller can deal with the
-    // Function* and parameter AllocaInst*s appropriately.
-    FunctionDeclaration functionDeclaration;
-    if (!ShouldGenerate()) return functionDeclaration;
-
-    // Create arguments prototype vector.
-    std::vector<Type*> argumentTypes;
-    for (auto argumentPair: arguments) {
-      argumentTypes.push_back(AbstractTypeToLLVMType(argumentPair.second));
-    }
-
-    // Create function prototype.
-    Type* returnType = AbstractTypeToLLVMType(abstractReturnType);
-
-    // Make Function.
-    FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
-    Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
-
-    // Create BasicBlock to start inserting function body IR into; the BasicBlock
-    // is inserted into the Function.
-    BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
-    Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
-    BasicBlockStack.push(BB);
-
-    functionDeclaration.function = function;
-
-    // Name arguments and add as local variables.
-    // Now that we're "inside" the function, we want to have access to the
-    // function arguments via local variables.
-    int i = 0;
-    for (auto& arg: function->args()) {
-      arg.setName(arguments[i].first);
-      functionDeclaration.arguments.push_back(
-        CreateVariable(/* abstractType */ arguments[i++].second,
-                       /* variableName */ arg.getName(),
-                       /* isGlobal     */ false,
-                       /* initialValue */ &arg)
-      );
-    }
-
-    FunctionTable[name] = function;
-    return functionDeclaration;
-  }
-
-  static void Return() {
-    if (!ShouldGenerate()) return;
-    Builder.CreateRetVoid();
-    PendingReturn = true;
-  }
-
-  static void Return(Value* returnValue) {
-    if (!ShouldGenerate()) return;
-    Builder.CreateRet(returnValue);
-    PendingReturn = true;
-  }
-
-  static void EndFunction(Value* returnValue = nullptr) {
-    // We shouldn't have the full-blown |ShouldGenerate| check here, or else
-    // when we have a pending return out, we'll never be able to escape this
-    // state. Instead, we just want an |ErrorState| check so that we can
-    // "unflip" the |PendingReturn| state.
-    if (ErrorState) return;
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    verifyFunction(*currentFunction);
-
-    // TODO(domfarolino): Remove parameters from |LocalVariables| map
-    // https://github.com/domfarolino/llvm-experiments/issues/13.
-
-    Return();
-    NextBlockForInsertion();
-  }
-
-  static void IfThen(Value* inCondition) {
-    if (!ShouldGenerate()) return;
-    inCondition = ToBool(inCondition);
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-
-    // Add |ThenBB| to |currentFunction| right now.
-    BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", currentFunction),
-               *ElseBB = BasicBlock::Create(TheContext, "else"),
-               *MergeBB = BasicBlock::Create(TheContext, "ifmerge");
-    IfBlocksStack.push(IfBlocks(inCondition, ThenBB, ElseBB, MergeBB));
-    Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
-
-    // Start generating code into |ThenBB|.
-    ReplaceInsertionBlock(ThenBB);
-  }
-
-  static void Else() {
-    if (ErrorState || IfBlocksStack.empty()) return;
-    // When we're ready to generate into |ElseBB|, we have to have |ThenBB|
-    // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
-    // the current function's list of BasicBlocks, and start generating into
-    // |ElseBB|.
-
-    // Assert: !IfBlocksStack.empty().
-    IfBlocks CurrentIfBlock = IfBlocksStack.top();
-    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
-
-    // This is subtle but necessary, as 'Then' codegen can change the current
-    // block.
-    // TODO(domfarolino): Can I get rid of this now that we're not using a PHI
-    // node?
-    CurrentIfBlock.ThenBB = Builder.GetInsertBlock();
-
-    // Push |ElseBB| to |currentFunction|'s list of BasicBlocks, and start
-    // generating into |ElseBB|.
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.ElseBB);
-    ReplaceInsertionBlock(CurrentIfBlock.ElseBB);
-  }
-
-  static void EndIf() {
-    if (ErrorState || IfBlocksStack.empty()) return;
-    // Assert: !IfBlocksStack.empty().
-    IfBlocks CurrentIfBlock = IfBlocksStack.top();
-    // See Else().
-    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
-
-    // Same subtle-but-necessary trick as in Else().
-    CurrentIfBlock.ElseBB = Builder.GetInsertBlock();
-
-    // Deal with |MergeBB|.
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.MergeBB);
-    ReplaceInsertionBlock(CurrentIfBlock.MergeBB);
-
-    /*Shouldn't need this (also it is breaking in nested ifs).
-    PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
-    PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
-    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);*/
-
-    IfBlocksStack.pop();
-  }
-
-  static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
-    if (!ShouldGenerate()) return nullptr;
-    Function* function = FunctionTable[name];
-    return Builder.CreateCall(function, args, regName);
-  }
-
-///////////////////////////////// Begin Casts /////////////////////////////////
-// This subsection consists of various casting algorithms implemented on top of
-// the LLVM builder APIs. The following casts are implemented so far:
-//   - Float   => Integer
-//   - Float   => Bool
-//   - Integer => Float
-//   - Integer => Bool
-//   - Bool    => Integer
-//   - Bool    => Float
-
-  // This function should only be called whenever the input Value* is
-  // guaranteed to be boolean-equivalent.
-  static Value* ToBool(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    if (input->getType()->isDoubleTy())
-      return CastFloatToBool(input);
-    else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
-      return CastIntegerToBool(input);
-
-    // Assert: getBitWidth == 1 (already a bool).
-    return input;
-  }
-
-  static Value* CastFloatToInteger(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    return new FPToSIInst(input, Type::getInt32Ty(TheContext), "float-to-integer", BB);
-  }
-
-  static Value* CastFloatToBool(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    return Builder.CreateFCmpONE(input, ProduceFloat(0.0), "float-to-bool");
-  }
-
-  static Value* CastIntegerToFloat(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
-  }
-
-  static Value* CastIntegerToBool(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    // TODO(domfarolino): Maybe replace this with a more straightforward cast:
-    // https://stackoverflow.com/questions/47264133/.
-    return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceFloat(0), "integer-to-bool");
-  }
-
-  static Value* CastBoolToInteger(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    return Builder.CreateZExt(input, Type::getInt32Ty(TheContext), "bool-to-integer");
-  }
-
-  static Value* CastBoolToFloat(Value* input) {
-    if (!ShouldGenerate()) return nullptr;
-    BasicBlock* BB = Builder.GetInsertBlock();
-    if (!BB) {
-      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
-      return nullptr;
-    }
-
-    // float something = integer(someBoolean);
-    return CastIntegerToFloat(CastBoolToInteger(input));
-  }
-
-////////////////////////////////// End Casts //////////////////////////////////
-
-/////////////////////////// End Variable Management ///////////////////////////
+////////////////////////// Begin Variable Management //////////////////////////
 
   // General get-the-value-of-a-variable function.
   static Value* GetVariable(const std::string& name) {
@@ -732,7 +484,159 @@ public:
 
 /////////////////////////// End Variable Management ///////////////////////////
 
-//////////////////////////////// Begin For Loop ////////////////////////////////
+////////////////// Begin Function & Control Flow Management ///////////////////
+
+  // Creates an LLVM Function* prototype, generates an IR declaration for it,
+  // and adds it to the FunctionTable.
+  static FunctionDeclaration CreateFunction(const std::string& name,
+                                  AbstractType abstractReturnType,
+                                  std::vector<std::pair<std::string, AbstractType>>
+                                    arguments,
+                                  bool variadic = false) {
+    // CreateFunction must return this, so the caller can deal with the
+    // Function* and parameter AllocaInst*s appropriately.
+    FunctionDeclaration functionDeclaration;
+    if (!ShouldGenerate()) return functionDeclaration;
+
+    // Create arguments prototype vector.
+    std::vector<Type*> argumentTypes;
+    for (auto argumentPair: arguments) {
+      argumentTypes.push_back(AbstractTypeToLLVMType(argumentPair.second));
+    }
+
+    // Create function prototype.
+    Type* returnType = AbstractTypeToLLVMType(abstractReturnType);
+
+    // Make Function.
+    FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
+    Function* function = Function::Create(functionType, Function::ExternalLinkage, name, TheModule.get());
+
+    // Create BasicBlock to start inserting function body IR into; the BasicBlock
+    // is inserted into the Function.
+    BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
+    Builder.SetInsertPoint(BB); // New instructions should be inserted into the BasicBlock.
+    BasicBlockStack.push(BB);
+
+    functionDeclaration.function = function;
+
+    // Name arguments and add as local variables.
+    // Now that we're "inside" the function, we want to have access to the
+    // function arguments via local variables.
+    int i = 0;
+    for (auto& arg: function->args()) {
+      arg.setName(arguments[i].first);
+      functionDeclaration.arguments.push_back(
+        CreateVariable(/* abstractType */ arguments[i++].second,
+                       /* variableName */ arg.getName(),
+                       /* isGlobal     */ false,
+                       /* initialValue */ &arg)
+      );
+    }
+
+    FunctionTable[name] = function;
+    return functionDeclaration;
+  }
+
+  static void Return() {
+    if (!ShouldGenerate()) return;
+    Builder.CreateRetVoid();
+    PendingReturn = true;
+  }
+
+  static void Return(Value* returnValue) {
+    if (!ShouldGenerate()) return;
+    Builder.CreateRet(returnValue);
+    PendingReturn = true;
+  }
+
+  static void EndFunction(Value* returnValue = nullptr) {
+    // We shouldn't have the full-blown |ShouldGenerate| check here, or else
+    // when we have a pending return out, we'll never be able to escape this
+    // state. Instead, we just want an |ErrorState| check so that we can
+    // "unflip" the |PendingReturn| state.
+    if (ErrorState) return;
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    verifyFunction(*currentFunction);
+
+    // TODO(domfarolino): Remove parameters from |LocalVariables| map
+    // https://github.com/domfarolino/llvm-experiments/issues/13.
+
+    Return();
+    NextBlockForInsertion();
+  }
+
+  static Value* CallFunction(const std::string& name,
+                             const std::vector<Value*>& args,
+                             const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
+    Function* function = FunctionTable[name];
+    return Builder.CreateCall(function, args, regName);
+  }
+
+  static void IfThen(Value* inCondition) {
+    if (!ShouldGenerate()) return;
+    inCondition = ToBool(inCondition);
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+
+    // Add |ThenBB| to |currentFunction| right now.
+    BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", currentFunction),
+               *ElseBB = BasicBlock::Create(TheContext, "else"),
+               *MergeBB = BasicBlock::Create(TheContext, "ifmerge");
+    IfBlocksStack.push(IfBlocks(inCondition, ThenBB, ElseBB, MergeBB));
+    Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
+
+    // Start generating code into |ThenBB|.
+    ReplaceInsertionBlock(ThenBB);
+  }
+
+  static void Else() {
+    if (ErrorState || IfBlocksStack.empty()) return;
+    // When we're ready to generate into |ElseBB|, we have to have |ThenBB|
+    // branch to |MergeBB|, update our reference to |ThenBB|, push |ElseBB| to
+    // the current function's list of BasicBlocks, and start generating into
+    // |ElseBB|.
+
+    // Assert: !IfBlocksStack.empty().
+    IfBlocks CurrentIfBlock = IfBlocksStack.top();
+    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
+
+    // This is subtle but necessary, as 'Then' codegen can change the current
+    // block.
+    // TODO(domfarolino): Can I get rid of this now that we're not using a PHI
+    // node?
+    CurrentIfBlock.ThenBB = Builder.GetInsertBlock();
+
+    // Push |ElseBB| to |currentFunction|'s list of BasicBlocks, and start
+    // generating into |ElseBB|.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.ElseBB);
+    ReplaceInsertionBlock(CurrentIfBlock.ElseBB);
+  }
+
+  static void EndIf() {
+    if (ErrorState || IfBlocksStack.empty()) return;
+    // Assert: !IfBlocksStack.empty().
+    IfBlocks CurrentIfBlock = IfBlocksStack.top();
+    // See Else().
+    if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
+
+    // Same subtle-but-necessary trick as in Else().
+    CurrentIfBlock.ElseBB = Builder.GetInsertBlock();
+
+    // Deal with |MergeBB|.
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentIfBlock.MergeBB);
+    ReplaceInsertionBlock(CurrentIfBlock.MergeBB);
+
+    /*Shouldn't need this (also it is breaking in nested ifs).
+    PHINode *PHN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifphi");
+    PHN->addIncoming(ProduceFloat(1), CurrentIfBlock.ThenBB);
+    PHN->addIncoming(ProduceFloat(2), CurrentIfBlock.ElseBB);*/
+
+    IfBlocksStack.pop();
+  }
+
+  // For loop APIs.
   static void For() {
     if (!ShouldGenerate()) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
@@ -773,5 +677,100 @@ public:
     ForLoopBlocksStack.pop();
   }
 
-///////////////////////////////// End For Loop /////////////////////////////////
+/////////////////// End Function & Control Flow Management ////////////////////
+
+///////////////////////////////// Begin Casts /////////////////////////////////
+// This subsection consists of various casting algorithms implemented on top of
+// the LLVM builder APIs. The following casts are implemented so far:
+//   - Float   => Integer
+//   - Float   => Bool
+//   - Integer => Float
+//   - Integer => Bool
+//   - Bool    => Integer
+//   - Bool    => Float
+
+  // This function should only be called whenever the input Value* is
+  // guaranteed to be boolean-equivalent.
+  static Value* ToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    if (input->getType()->isDoubleTy())
+      return CastFloatToBool(input);
+    else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
+      return CastIntegerToBool(input);
+
+    // Assert: getBitWidth == 1 (already a bool).
+    return input;
+  }
+
+  static Value* CastFloatToInteger(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return new FPToSIInst(input, Type::getInt32Ty(TheContext), "float-to-integer", BB);
+  }
+
+  static Value* CastFloatToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return Builder.CreateFCmpONE(input, ProduceFloat(0.0), "float-to-bool");
+  }
+
+  static Value* CastIntegerToFloat(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return new SIToFPInst(input, Type::getDoubleTy(TheContext), "integer-to-float", BB);
+  }
+
+  static Value* CastIntegerToBool(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    // TODO(domfarolino): Maybe replace this with a more straightforward cast:
+    // https://stackoverflow.com/questions/47264133/.
+    return Builder.CreateFCmpONE(CastIntegerToFloat(input), ProduceFloat(0), "integer-to-bool");
+  }
+
+  static Value* CastBoolToInteger(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    return Builder.CreateZExt(input, Type::getInt32Ty(TheContext), "bool-to-integer");
+  }
+
+  static Value* CastBoolToFloat(Value* input) {
+    if (!ShouldGenerate()) return nullptr;
+    BasicBlock* BB = Builder.GetInsertBlock();
+    if (!BB) {
+      std::cout << "BasicBlock not available for cast, something is wrong..." << std::endl;
+      return nullptr;
+    }
+
+    // float something = integer(someBoolean);
+    return CastIntegerToFloat(CastBoolToInteger(input));
+  }
+
+////////////////////////////////// End Casts //////////////////////////////////
+
 };
