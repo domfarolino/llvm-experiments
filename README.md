@@ -86,7 +86,7 @@ Relational operators:
  - `NotEqualFloats`
  - `NotEqualIntegers`
 
-## Core APIs
+## Variable Management APIs
 
 This section contains APIs relevant to the core functionality of the code generator.
 
@@ -110,16 +110,53 @@ That's what this method does:
  - Creates a `load` instruction for the _loaded_ variable reference
  - Returns the result of the step immediately above, an LLVM `Value*`
 
-This is used when passing reference-variables to the `putX` methods, as well as
-passing variables by *reference* to functions, etc.
+This is used when passing reference-variables to the `putX` methods, as well as when
+simple dereferencing a reference variable to use its value in some RHS expression.
 
 #### `Value* CodeGen::GetVariableReference(name)`
 
-#### `Value* CodeGen::Assign(name)`
+This method is used to retrieve a reference to a variable named `|name|`. It is similar
+to `GetVariable()`, but instead of loading the variable `Value*` and returning it, we just
+return the un-loaded `Value*`, which is as good as a pointer.
+
+This is used to pass variables by *reference* to functions, etc. For additional context,
+An example given in the source code is:
+
+```
+// CodeGen::CallFunction("someFunc",
+//   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
+//
+// CodeGen::CallFunction("someFunc",
+//   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
+```
+
+#### `Value* CodeGen::Assign(name, rhs)`
+
+This method takes in a name, and some `Value*` RHS, and creates a `store` instruction,
+assigning `rhs` to the `Value*` associated with `|name|`.
 
 #### `Value* CodeGen::AssignReferenceVariable(name)`
 
+This method is essentially the reference-counterpart to `Assign()` above. It is
+essentially the same, but "dereferences" first, by delegating to `GetVariable()`
+before creating the `store` instruction.
+
 #### `Value* CodeGen::CreateVariable(type, name, global, init_val)`
+
+This method is sorta the backbone of the variable management APIs. It can create variables
+of any:
+
+ - Primitive type
+ - Primitive "reference" type
+ - TODO: Perhaps arrays can be included in this function?
+
+It:
+
+ - Creates a suitable initial value, given the `|type|`
+ - Creates an LLVM `AllocaInst*` with proper type and name, in the current function's entry block
+ - Creates a `store` instruction to store the initial value to the `AllocaInst*`
+ - Inserts the `AllocaInst*` into the `LocalVariables` map
+ - Returns the created `AllocaInst*`
 
 # Provided Tests
 
