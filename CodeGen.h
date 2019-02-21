@@ -565,6 +565,14 @@ public:
     NextBlockForInsertion();
   }
 
+  static Value* CallFunction(const std::string& name,
+                             const std::vector<Value*>& args,
+                             const std::string& regName = "") {
+    if (!ShouldGenerate()) return nullptr;
+    Function* function = FunctionTable[name];
+    return Builder.CreateCall(function, args, regName);
+  }
+
   static void IfThen(Value* inCondition) {
     if (!ShouldGenerate()) return;
     inCondition = ToBool(inCondition);
@@ -628,10 +636,45 @@ public:
     IfBlocksStack.pop();
   }
 
-  static Value* CallFunction(const std::string& name, const std::vector<Value*>& args, const std::string& regName = "") {
-    if (!ShouldGenerate()) return nullptr;
-    Function* function = FunctionTable[name];
-    return Builder.CreateCall(function, args, regName);
+  // For loop APIs.
+  static void For() {
+    if (!ShouldGenerate()) return;
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+
+    BasicBlock *CondEvalBB = BasicBlock::Create(TheContext, "condeval", currentFunction),
+               *LoopBB = BasicBlock::Create(TheContext, "loop"),
+               *PostLoopBB = BasicBlock::Create(TheContext, "postloop");
+    ForLoopBlocksStack.push(ForLoopBlocks(CondEvalBB, LoopBB, PostLoopBB));
+
+    // Start generating code into |CondEvalBB|.
+    Builder.CreateBr(CondEvalBB);
+    ReplaceInsertionBlock(CondEvalBB);
+  }
+
+  static void ForCondition(Value* inCondition) {
+    if (!ShouldGenerate()) return;
+    inCondition = ToBool(inCondition);
+    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.LoopBB);
+
+    // Start generating code into |LoopBB|.
+    Builder.CreateCondBr(inCondition, CurrentForLoopBlock.LoopBB, CurrentForLoopBlock.PostLoopBB);
+    ReplaceInsertionBlock(CurrentForLoopBlock.LoopBB);
+  }
+
+  static void EndFor() {
+    if (ErrorState || ForLoopBlocksStack.empty()) return;
+    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
+
+    if (!PendingReturn) Builder.CreateBr(CurrentForLoopBlock.CondEvalBB);
+
+    Function* currentFunction = Builder.GetInsertBlock()->getParent();
+    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.PostLoopBB);
+
+    // Start generating post-loop code into |PostLoopBB|.
+    ReplaceInsertionBlock(CurrentForLoopBlock.PostLoopBB);
+    ForLoopBlocksStack.pop();
   }
 
 /////////////////// End Function & Control Flow Management ////////////////////
@@ -730,46 +773,4 @@ public:
 
 ////////////////////////////////// End Casts //////////////////////////////////
 
-//////////////////////////////// Begin For Loop ////////////////////////////////
-  static void For() {
-    if (!ShouldGenerate()) return;
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-
-    BasicBlock *CondEvalBB = BasicBlock::Create(TheContext, "condeval", currentFunction),
-               *LoopBB = BasicBlock::Create(TheContext, "loop"),
-               *PostLoopBB = BasicBlock::Create(TheContext, "postloop");
-    ForLoopBlocksStack.push(ForLoopBlocks(CondEvalBB, LoopBB, PostLoopBB));
-
-    // Start generating code into |CondEvalBB|.
-    Builder.CreateBr(CondEvalBB);
-    ReplaceInsertionBlock(CondEvalBB);
-  }
-
-  static void ForCondition(Value* inCondition) {
-    if (!ShouldGenerate()) return;
-    inCondition = ToBool(inCondition);
-    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.LoopBB);
-
-    // Start generating code into |LoopBB|.
-    Builder.CreateCondBr(inCondition, CurrentForLoopBlock.LoopBB, CurrentForLoopBlock.PostLoopBB);
-    ReplaceInsertionBlock(CurrentForLoopBlock.LoopBB);
-  }
-
-  static void EndFor() {
-    if (ErrorState || ForLoopBlocksStack.empty()) return;
-    ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
-
-    if (!PendingReturn) Builder.CreateBr(CurrentForLoopBlock.CondEvalBB);
-
-    Function* currentFunction = Builder.GetInsertBlock()->getParent();
-    currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.PostLoopBB);
-
-    // Start generating post-loop code into |PostLoopBB|.
-    ReplaceInsertionBlock(CurrentForLoopBlock.PostLoopBB);
-    ForLoopBlocksStack.pop();
-  }
-
-///////////////////////////////// End For Loop /////////////////////////////////
 };

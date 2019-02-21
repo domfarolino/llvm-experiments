@@ -10,7 +10,7 @@ Helpful links so far:
 The testing story for htis repository is less than ideal. To get going:
 
  1. Build the tests: `make`
- 1. Run the tests: `bash tests/run_tests.sh`
+ 1. Run the tests: `cd tests/ && bash run_tests.sh`
 
 # CodeGen API
 
@@ -157,6 +157,30 @@ It:
  - Creates a `store` instruction to store the initial value to the `AllocaInst*`
  - Inserts the `AllocaInst*` into the `LocalVariables` map
  - Returns the created `AllocaInst*`
+
+## Function & Control Flow APIs
+
+#### `FunctionDeclaration CodeGen::CreateFunction(name, type, arguments, variadic = false)`
+
+#### `void CodeGen::Return()`
+
+#### `void CodeGen::EndFunction(return_value)`
+
+#### `Value* CodeGen::CallFunction(name, args)`
+
+#### `void CodeGen::IfThen(condition)`
+
+#### `void CodeGen::Else()`
+
+#### `void CodeGen::EndIf()`
+
+#### `void CodeGen::For()`
+
+#### `void CodeGen::ForCondition(condition)`
+
+#### `void CodeGen::EndFor()`
+
+## Type Casting APIs
 
 # Provided Tests
 
