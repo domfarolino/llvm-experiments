@@ -190,3 +190,10 @@ The tests in this repository are as follows:
    - Tests `CodeGen::BitwiseAndIntegers` and `CodeGen::BitwiseOrIntegers`
  - boolTo.cpp
    - Tests `CodeGen::CastBoolToInteger` and `CodeGen::CastBoolToFloat`
+ - getX.cpp
+   - Tests all of the stdin `getX` methods
+ - globalVariable.cpp
+   - Tests `GlobalVariable* CodeGen::CreateGlobalVariable`, which is called
+     from `CodeGen::CreateVariable`; also tests assignments of global variables.
+ - negate.cpp
+   - TODO: This!

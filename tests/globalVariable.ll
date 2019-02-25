@@ -13,6 +13,8 @@ source_filename = "Dom Sample"
 @9 = private unnamed_addr constant [3 x i8] c"%s\00"
 @globalInteger = common global i32 0
 @10 = private unnamed_addr constant [5 x i8] c"tmp:\00"
+@11 = private unnamed_addr constant [15 x i8] c"globalInteger:\00"
+@12 = private unnamed_addr constant [15 x i8] c"globalInteger:\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -118,6 +120,7 @@ entry:
 define i32 @main() {
 entry:
   call void @mutateGlobal()
+  call void @putString(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @12, i32 0, i32 0))
   %globalInteger = load i32, i32* @globalInteger
   call void @putInteger(i32 %globalInteger)
   ret i32 0
@@ -126,12 +129,17 @@ entry:
 define void @mutateGlobal() {
 entry:
   %tmp = alloca i32
-  store i32 234, i32* @globalInteger
+  store i32 100, i32* @globalInteger
   %globalInteger = load i32, i32* @globalInteger
   %0 = add i32 10, %globalInteger
   store i32 %0, i32* %tmp
-  call void @putString(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @10, i32 0, i32 0))
   %tmp1 = load i32, i32* %tmp
-  call void @putInteger(i32 %tmp1)
+  store i32 %tmp1, i32* @globalInteger
+  call void @putString(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @10, i32 0, i32 0))
+  %tmp2 = load i32, i32* %tmp
+  call void @putInteger(i32 %tmp2)
+  call void @putString(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @11, i32 0, i32 0))
+  %globalInteger3 = load i32, i32* @globalInteger
+  call void @putInteger(i32 %globalInteger3)
   ret void
 }
