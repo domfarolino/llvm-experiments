@@ -11,12 +11,12 @@ source_filename = "Dom Sample"
 @7 = private unnamed_addr constant [3 x i8] c"%d\00"
 @8 = private unnamed_addr constant [4 x i8] c" %c\00"
 @9 = private unnamed_addr constant [3 x i8] c"%s\00"
-@10 = private unnamed_addr constant [11 x i8] c"stringArg:\00"
+@10 = private unnamed_addr constant [30 x i8] c"stringArg (pre-modification):\00"
 @11 = private unnamed_addr constant [9 x i8] c"farolino\00"
-@12 = private unnamed_addr constant [11 x i8] c"stringArg:\00"
+@12 = private unnamed_addr constant [31 x i8] c"stringArg (post-modification):\00"
 @13 = private unnamed_addr constant [8 x i8] c"dominic\00"
-@14 = private unnamed_addr constant [10 x i8] c"myString:\00"
-@15 = private unnamed_addr constant [10 x i8] c"myString:\00"
+@14 = private unnamed_addr constant [34 x i8] c"myString (pre-modification call):\00"
+@15 = private unnamed_addr constant [35 x i8] c"myString (post-modification call):\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -123,12 +123,12 @@ define i32 @main() {
 entry:
   %myString = alloca i8*
   store i8* getelementptr inbounds ([8 x i8], [8 x i8]* @13, i32 0, i32 0), i8** %myString
-  call void @putString(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @14, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @14, i32 0, i32 0))
   %myString1 = load i8*, i8** %myString
   call void @putString(i8* %myString1)
   %myString2 = load i8*, i8** %myString
   call void @stringFunc(i8* %myString2)
-  call void @putString(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @15, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @15, i32 0, i32 0))
   %myString3 = load i8*, i8** %myString
   call void @putString(i8* %myString3)
   ret i32 0
@@ -138,11 +138,11 @@ define void @stringFunc(i8* %stringArg) {
 entry:
   %stringArg1 = alloca i8*
   store i8* %stringArg, i8** %stringArg1
-  call void @putString(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @10, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @10, i32 0, i32 0))
   %stringArg2 = load i8*, i8** %stringArg1
   call void @putString(i8* %stringArg2)
   store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @11, i32 0, i32 0), i8** %stringArg1
-  call void @putString(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @12, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([31 x i8], [31 x i8]* @12, i32 0, i32 0))
   %stringArg3 = load i8*, i8** %stringArg1
   call void @putString(i8* %stringArg3)
   ret void

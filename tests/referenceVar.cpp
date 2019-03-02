@@ -19,7 +19,9 @@ int main() {
       std::make_pair("outString", AbstractType::StringRef),
     };
 
+  // Create a function that takes a bunch of reference variables.
   CodeGen::CreateFunction("modifyArgs", AbstractType::Void, modifyArgsArguments);
+
   // Modify all of the output reference variables.
   CodeGen::AssignReferenceVariable("outInteger", CodeGen::AddIntegers(CodeGen::GetReferenceVariableValue("outInteger"), CodeGen::ProduceInteger(234)));
   CodeGen::AssignReferenceVariable("outFloat", CodeGen::ProduceFloat(234.09324));

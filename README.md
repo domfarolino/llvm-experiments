@@ -197,3 +197,19 @@ The tests in this repository are as follows:
      from `CodeGen::CreateVariable`; also tests assignments of global variables.
  - negate.cpp
    - Tests `CodeGen::NegateInteger` and `CodeGen::NegateFloat`.
+ - produceBool.cpp
+   - Tests `CodeGen::ProduceBool`, which takes in a C++ boolean, and produces an
+     LLVM `i1` representing the bool. This `CodeGen` method is similar to the
+     other Produce\* ones.
+ - putX.cpp
+   - Tests all of the stdout `putX` methods
+ - referenceVar.cpp
+   - This tests that all of the primitive types can be passed by reference, and
+     and that the references can be modified, and such modifications persist to
+     the original variable. This test exercises the `AbstractType::<Type>Ref` types
+     that indicate a primitive _reference_. Also exercised are
+     `CodeGen::AssignReferenceVariable`, and `CodeGen::GetReferenceVariableValue`.
+ - stringArg.cpp
+   - This test actually isn't totally necessary, and just tests the assigning of
+     a string variable passed by value (I believe). It just makes sure that
+     a string copy is not treated like a reference.
