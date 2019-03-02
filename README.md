@@ -196,4 +196,4 @@ The tests in this repository are as follows:
    - Tests `GlobalVariable* CodeGen::CreateGlobalVariable`, which is called
      from `CodeGen::CreateVariable`; also tests assignments of global variables.
  - negate.cpp
-   - TODO: This!
+   - Tests `CodeGen::NegateInteger` and `CodeGen::NegateFloat`.

@@ -24,8 +24,11 @@ int main() {
   CodeGen::CallFunction("putFloat", { CodeGen::GetVariable("floatArgument") });
   CodeGen::EndFunction();
 
+  // Call the negate-and-print functions for testing.
   CodeGen::CallFunction("negateInteger", { CodeGen::ProduceInteger(234) });
   CodeGen::CallFunction("negateFloat", { CodeGen::ProduceFloat(10.8094) });
+
+  // Return.
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
