@@ -16,6 +16,8 @@ using namespace llvm;
 enum AbstractType {
   Integer,
   IntegerRef,
+  IntegerArray,
+  IntegerArrayRef,
   Float,
   FloatRef,
   Bool,
@@ -24,7 +26,7 @@ enum AbstractType {
   CharRef,
   String,
   StringRef,
-  Void,
+  Void, // This should be last.
 };
 
 static LLVMContext TheContext;
@@ -93,6 +95,8 @@ private:
   }
 
   static Constant* CreateInitialValueGivenType(AbstractType abstractType) {
+    // Only initial values need produced for primitive types. Arrays and/or
+    // references should never be initialized here.
     if (abstractType == AbstractType::Integer)
       return ProduceInteger(0);
     else if (abstractType == AbstractType::Float)
@@ -202,7 +206,7 @@ private:
 
   // Used as a helper.
   static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
-    // Value types.
+    // Primitive types.
     if (abstractType == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
     else if (abstractType == AbstractType::Float)
@@ -215,7 +219,7 @@ private:
       return Type::getInt8Ty(TheContext)->getPointerTo();
     else if (abstractType == AbstractType::Void)
       return Type::getVoidTy(TheContext);
-    // Reference (pointer) types.
+    // Primitive reference (pointer) types.
     else if (abstractType == AbstractType::IntegerRef)
       return Type::getInt32Ty(TheContext)->getPointerTo();
     else if (abstractType == AbstractType::FloatRef)
@@ -226,6 +230,12 @@ private:
       return Type::getInt8Ty(TheContext)->getPointerTo();
     else if (abstractType == AbstractType::StringRef)
       return Type::getInt8Ty(TheContext)->getPointerTo()->getPointerTo();
+    // Array types.
+    else if (abstractType == AbstractType::IntegerArray)
+      return ArrayType::get(Type::getInt32Ty(TheContext), 10);
+    // Array reference types.
+    else if (abstractType == AbstractType::IntegerArrayRef)
+      return ArrayType::get(Type::getInt32Ty(TheContext), 10)->getPointerTo();
 
     // Assert: This is never reached.
     return Type::getDoubleTy(TheContext);
@@ -434,6 +444,8 @@ public:
   // |rhs| value.
   static void Assign(const std::string& variableName, Value* rhs) {
     if (!ShouldGenerate()) return;
+    // Use original AllocaInst* (uh, Value*) because we don't want the actual
+    // value as the LHS, but the "reference" to the value.
     Value* variable = LocalVariables[variableName];
     if (!variable) {
       std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
@@ -443,10 +455,17 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
+  // TODO(domfarolino): This is probably what |Assign| should be come; make note
+  // of this as an issue.
+  static void Assign(Value* lhs, Value* rhs) {
+    Builder.CreateStore(rhs, lhs);
+  }
+
   // This is used to assign the value of a reference variable |variableName| to
   // |rhs|. It essentially is the same as |Assign|, but dereferences first.
   static void AssignReferenceVariable(const std::string& variableName, Value* rhs) {
     if (!ShouldGenerate()) return;
+    // We create a load here.
     Value* variable = GetVariable(variableName);
     Builder.CreateStore(rhs, variable);
   }
@@ -458,10 +477,22 @@ public:
   static Value* CreateVariable(AbstractType abstractType,
                                const std::string& variableName,
                                bool isGlobal = false,
+                               bool isArray = false,
                                Value* initialValue = nullptr) {
     if (!ShouldGenerate()) return nullptr;
     if (isGlobal)
       return CreateGlobalVariable(abstractType, variableName);
+
+    if (isArray && initialValue) {
+      // Assert: Unreachable; we haven't implemented this.
+      // TODO(domfarolino): Like this.
+      // At the time of writing, arrays are given initial values only when
+      // they are passed or copied by value. We have to copy the contents over
+      // via a sequence of element-by-element `store` instructions. We
+      // implicitly trust that the lengths match and that we won't run into any
+      // any issues, because the compiler's type checker should have ensured
+      // this for us to get here.
+    }
 
     // |initialValue| is not always nullptr, for example, in the case of
     // function parameters.
@@ -476,10 +507,30 @@ public:
                                            AbstractTypeToLLVMType(abstractType),
                                            0, variableName.c_str());
 
-    // Assert: |initialValue| is non-null.
-    Builder.CreateStore(initialValue, argAlloca);
+    // Arrays do not get initial values `store`d into them. If an initial value
+    // is provided, it is because the array was passed or copied by value, and
+    // we have to copy the contents of the array over via a sequence of `store`
+    // instructions, which we do in the `isArray` check above.
+    if (!isArray) {
+      // Assert: |initialValue| is non-null.
+      Builder.CreateStore(initialValue, argAlloca);
+    }
     LocalVariables[variableName] = argAlloca;
     return argAlloca;
+  }
+
+  // TODO(domfarolino): Write documentation for this.
+  static Value* IndexArray(const std::string& array_name, Value* index) {
+    Value* array_ptr = GetVariableReference(array_name);
+    auto zero = ConstantInt::get(TheContext, APInt(64, 0, true));
+    return Builder.CreateGEP(array_ptr, {zero, index}, "array-index");
+  }
+  // TODO(domfarolino): Write documentation for this.
+  static Value* IndexArrayGetValue(const std::string& array_name,
+                                   Value* index) {
+    Value* array_ptr = GetVariableReference(array_name);
+    auto zero = ConstantInt::get(TheContext, APInt(64, 0, true));
+    return Builder.CreateLoad(Builder.CreateGEP(array_ptr, {zero, index}, "array-index"), "");
   }
 
 /////////////////////////// End Variable Management ///////////////////////////
@@ -529,6 +580,7 @@ public:
         CreateVariable(/* abstractType */ arguments[i++].second,
                        /* variableName */ arg.getName(),
                        /* isGlobal     */ false,
+                       /* isArray      */ false,
                        /* initialValue */ &arg)
       );
     }
@@ -576,6 +628,9 @@ public:
   static void IfThen(Value* inCondition) {
     if (!ShouldGenerate()) return;
     inCondition = ToBool(inCondition);
+    // Assert: |inCondition| is now an integer type, whose width is 1. See
+    // http://llvm.org/doxygen/Type_8h_source.html#l00199.
+
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
 
     // Add |ThenBB| to |currentFunction| right now.
@@ -637,6 +692,8 @@ public:
   }
 
   // For loop APIs.
+  // Maybe refactor the for loop initialization methods. See
+  // https://github.com/domfarolino/llvm-experiments/issues/32.
   static void For() {
     if (!ShouldGenerate()) return;
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
@@ -654,6 +711,9 @@ public:
   static void ForCondition(Value* inCondition) {
     if (!ShouldGenerate()) return;
     inCondition = ToBool(inCondition);
+    // Assert: |inCondition| is now an integer type, whose width is 1. See
+    // http://llvm.org/doxygen/Type_8h_source.html#l00199.
+
     ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.LoopBB);

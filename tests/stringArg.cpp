@@ -28,7 +28,7 @@ int main() {
 
   // Body of main.
   // Create future argument variable.
-  CodeGen::CreateVariable(AbstractType::String, "myString", false, CodeGen::ProduceString("dominic"));
+  CodeGen::CreateVariable(AbstractType::String, "myString", false, false, CodeGen::ProduceString("dominic"));
 
   // Print "before" value.
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("myString (pre-modification call):") });

@@ -13,7 +13,7 @@ int main() {
 
   CodeGen::CreateFunction("mutateGlobal", AbstractType::Void, {});                  // function mutateGlobal() {
   CodeGen::Assign("globalInteger", CodeGen::ProduceInteger(100));                   //   globalInteger = 100;
-  CodeGen::CreateVariable(AbstractType::Integer, "tmp", false,                      //   int tmp = 10 + 100;
+  CodeGen::CreateVariable(AbstractType::Integer, "tmp", false, false,               //   int tmp = 10 + 100;
                           CodeGen::AddIntegers(CodeGen::ProduceInteger(10),
                                                CodeGen::GetVariable("globalInteger")));
   CodeGen::Assign("globalInteger", CodeGen::GetVariable("tmp"));                    //   globalInteger = tmp;

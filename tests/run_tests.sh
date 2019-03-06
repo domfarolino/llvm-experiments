@@ -1,3 +1,4 @@
+./arrays_by_value &> arrays_by_value.ll &&
 ./bitwise &> bitwise.ll &&
 ./boolTo &> boolTo.ll &&
 ./globalVariable &> globalVariable.ll &&
@@ -16,3 +17,4 @@
 /usr/local/opt/llvm/bin/lli produceBool.ll > produceBool.out &&
 /usr/local/opt/llvm/bin/lli referenceVar.ll > referenceVar.out &&
 /usr/local/opt/llvm/bin/lli stringArg.ll > stringArg.out
+/usr/local/opt/llvm/bin/lli arrays_by_value.ll > arrays_by_value.out

@@ -33,11 +33,11 @@ int main() {
 
   // Body of main.
   // Create future argument variables.
-  CodeGen::CreateVariable(AbstractType::Integer, "myInteger", false, CodeGen::ProduceInteger(123));
-  CodeGen::CreateVariable(AbstractType::Float, "myFloat", false, CodeGen::ProduceFloat(123.03493));
-  CodeGen::CreateVariable(AbstractType::Bool, "myBool", false, CodeGen::ProduceBool(false));
-  CodeGen::CreateVariable(AbstractType::Char, "myChar", false, CodeGen::ProduceChar('a'));
-  CodeGen::CreateVariable(AbstractType::String, "myString", false, CodeGen::ProduceString("initial"));
+  CodeGen::CreateVariable(AbstractType::Integer, "myInteger", false, false, CodeGen::ProduceInteger(123));
+  CodeGen::CreateVariable(AbstractType::Float, "myFloat", false, false, CodeGen::ProduceFloat(123.03493));
+  CodeGen::CreateVariable(AbstractType::Bool, "myBool", false, false, CodeGen::ProduceBool(false));
+  CodeGen::CreateVariable(AbstractType::Char, "myChar", false, false, CodeGen::ProduceChar('a'));
+  CodeGen::CreateVariable(AbstractType::String, "myString", false, false, CodeGen::ProduceString("initial"));
 
   // Print "before" values.
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("Before:") });
