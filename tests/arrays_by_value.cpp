@@ -7,13 +7,13 @@ int main() {
   CodeGen::Setup();
 
   //////// MAIN.
-  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  std::vector<std::tuple<std::string, AbstractType, int>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
   ///////////////////////////////////////////////////////////////////////////////////
   // Create a function that accepts an array by value.
-  std::vector<std::pair<std::string, AbstractType>> fn_args =
-    { std::make_pair("input_array", AbstractType::IntegerArray) };
+  std::vector<std::tuple<std::string, AbstractType, int>> fn_args =
+    { std::make_tuple("input_array", AbstractType::IntegerArray, 10) };
   CodeGen::CreateFunction("takes_array", AbstractType::Void, fn_args);
     CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing given array values inside fn `input_array`") });
     CodeGen::CreateVariable(AbstractType::Integer, "i");
@@ -54,7 +54,7 @@ int main() {
 
   // Body of main.
   // Create future argument variable.
-  CodeGen::CreateVariable(AbstractType::IntegerArray, "my_array", false, true);
+  CodeGen::CreateVariable(AbstractType::IntegerArray, "my_array", false, true, 10);
 
   // Assign all array elements.
   CodeGen::CreateVariable(AbstractType::Integer, "i");

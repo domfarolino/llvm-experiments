@@ -7,7 +7,7 @@ int main() {
   CodeGen::Setup();
 
   //////// MAIN.
-  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  std::vector<std::tuple<std::string, AbstractType, int>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
   CodeGen::CallFunction("putBool", { CodeGen::ProduceBool(true) });

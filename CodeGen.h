@@ -1,7 +1,7 @@
 #include <map>
 #include <stack>
 #include <vector>
-#include <utility> // for std::pair.
+#include <utility> // for std::tuple.
 
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -135,67 +135,70 @@ private:
     DeclareScanf();
 
     // Declare |putInteger|.
-    CodeGen::CreateFunction("putInteger", AbstractType::Void, { std::make_pair("out", AbstractType::Integer) });
+    CodeGen::CreateFunction("putInteger", AbstractType::Void, { std::make_tuple("out", AbstractType::Integer, 0) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putFloat|.
-    CodeGen::CreateFunction("putFloat", AbstractType::Void, { std::make_pair("out", AbstractType::Float) });
+    CodeGen::CreateFunction("putFloat", AbstractType::Void, { std::make_tuple("out", AbstractType::Float, 0) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%lf\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putBool|.
-    CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_pair("out", AbstractType::Bool) });
+    CodeGen::CreateFunction("putBool", AbstractType::Void, { std::make_tuple("out", AbstractType::Bool, 0) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putChar|.
-    CodeGen::CreateFunction("putChar", AbstractType::Void, { std::make_pair("out", AbstractType::Char) });
+    CodeGen::CreateFunction("putChar", AbstractType::Void, { std::make_tuple("out", AbstractType::Char, 0) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%c\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |putString|.
-    CodeGen::CreateFunction("putString", AbstractType::Void, { std::make_pair("out", AbstractType::String) });
+    CodeGen::CreateFunction("putString", AbstractType::Void, { std::make_tuple("out", AbstractType::String, 0) });
     CodeGen::CallFunction("printf", { CodeGen::ProduceString("%s\n"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |getInteger|.
-    CodeGen::CreateFunction("getInteger", AbstractType::Void, { std::make_pair("out", AbstractType::IntegerRef) });
+    CodeGen::CreateFunction("getInteger", AbstractType::Void, { std::make_tuple("out", AbstractType::IntegerRef, 0) });
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%d"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |getFloat|.
-    CodeGen::CreateFunction("getFloat", AbstractType::Void, { std::make_pair("out", AbstractType::FloatRef) });
+    CodeGen::CreateFunction("getFloat", AbstractType::Void, { std::make_tuple("out", AbstractType::FloatRef, 0) });
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%lf"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |getBool|.
     // This is a little more involved, because to get it to work correctly, we
     // have to give |scanf| an integer, and then cast the integer to a bool.
-    CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_pair("out", AbstractType::BoolRef) });
+    CodeGen::CreateFunction("getBool", AbstractType::Void, { std::make_tuple("out", AbstractType::BoolRef, 0) });
     CodeGen::CreateVariable(AbstractType::Integer, "tmpInteger");
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%d"), CodeGen::GetVariableReference("tmpInteger") });
     CodeGen::AssignReferenceVariable("out", CodeGen::CastIntegerToBool(CodeGen::GetVariable("tmpInteger")));
     CodeGen::EndFunction();
 
     // Declare |getChar|.
-    CodeGen::CreateFunction("getChar", AbstractType::Void, { std::make_pair("out", AbstractType::CharRef) });
+    CodeGen::CreateFunction("getChar", AbstractType::Void, { std::make_tuple("out", AbstractType::CharRef, 0) });
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString(" %c"), CodeGen::GetVariable("out") });
     CodeGen::EndFunction();
 
     // Declare |getString|.
-    CodeGen::CreateFunction("getString", AbstractType::Void, { std::make_pair("out", AbstractType::StringRef) });
+    CodeGen::CreateFunction("getString", AbstractType::Void, { std::make_tuple("out", AbstractType::StringRef, 0) });
     CodeGen::CallFunction("scanf", { CodeGen::ProduceString("%s"), CodeGen::GetReferenceVariableValue("out") });
     CodeGen::EndFunction();
   }
 
   // CreateVariable delegates to this.
   // Constants don't yet support user-defined initial values.
-  static GlobalVariable* CreateGlobalVariable(AbstractType abstractType, const std::string& variableName) {
+  static GlobalVariable* CreateGlobalVariable(AbstractType abstractType,
+                                              const std::string& variableName,
+                                              int array_length) {
     Constant* initialValue = CreateInitialValueGivenType(abstractType);
     GlobalVariable* globalVariable =
         new GlobalVariable(/* Module */ *TheModule,
-                           /* Type */ AbstractTypeToLLVMType(abstractType),
+                           /* Type */ AbstractTypeToLLVMType(abstractType,
+                                                             array_length),
                            /* isConstant */ false, // Not yet supported by us.
                            /* Linkage */ GlobalValue::CommonLinkage,
                            /* Initializer */ initialValue,
@@ -205,7 +208,10 @@ private:
   }
 
   // Used as a helper.
-  static Type* AbstractTypeToLLVMType(AbstractType abstractType) {
+  static Type* AbstractTypeToLLVMType(AbstractType abstractType,
+                                      int array_size) {
+    // Assert: (IsArrayType(abstract_type) && array_size) ||
+    //         (!IsArrayType(abstract_type) && !array_size).
     // Primitive types.
     if (abstractType == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
@@ -232,10 +238,10 @@ private:
       return Type::getInt8Ty(TheContext)->getPointerTo()->getPointerTo();
     // Array types.
     else if (abstractType == AbstractType::IntegerArray)
-      return ArrayType::get(Type::getInt32Ty(TheContext), 10);
+      return ArrayType::get(Type::getInt32Ty(TheContext), array_size);
     // Array reference types.
     else if (abstractType == AbstractType::IntegerArrayRef)
-      return ArrayType::get(Type::getInt32Ty(TheContext), 10)->getPointerTo();
+      return ArrayType::get(Type::getInt32Ty(TheContext), array_size)->getPointerTo();
 
     // Assert: This is never reached.
     return Type::getDoubleTy(TheContext);
@@ -479,10 +485,11 @@ public:
                                const std::string& variableName,
                                bool isGlobal = false,
                                bool isArray = false,
+                               int array_size = 0,
                                Value* initialValue = nullptr) {
     if (!ShouldGenerate()) return nullptr;
     if (isGlobal)
-      return CreateGlobalVariable(abstractType, variableName);
+      return CreateGlobalVariable(abstractType, variableName, array_size);
 
     // For non-array types that do not have an |initialValue|, we want to
     // compute one. We don't do this for arrays, as arrays do not need to
@@ -495,7 +502,8 @@ public:
     IRBuilder<> EntryBuilder(&currentFunction->getEntryBlock(),
                              currentFunction->getEntryBlock().begin());
     AllocaInst* argAlloca = EntryBuilder.CreateAlloca(
-                                           AbstractTypeToLLVMType(abstractType),
+                                           AbstractTypeToLLVMType(abstractType,
+                                                                  array_size),
                                            0, variableName.c_str());
 
     // |initialValue| will only be nullptr here when we're creating a
@@ -530,7 +538,7 @@ public:
   // and adds it to the FunctionTable.
   static FunctionDeclaration CreateFunction(const std::string& name,
                                   AbstractType abstractReturnType,
-                                  std::vector<std::pair<std::string, AbstractType>>
+                                  std::vector<std::tuple<std::string, AbstractType, int>>
                                     arguments,
                                   bool variadic = false) {
     // CreateFunction must return this, so the caller can deal with the
@@ -541,11 +549,13 @@ public:
     // Create arguments prototype vector.
     std::vector<Type*> argumentTypes;
     for (auto argumentPair: arguments) {
-      argumentTypes.push_back(AbstractTypeToLLVMType(argumentPair.second));
+      argumentTypes.push_back(AbstractTypeToLLVMType(std::get<1>(argumentPair),
+                                                     std::get<2>(argumentPair)));
     }
 
     // Create function prototype.
-    Type* returnType = AbstractTypeToLLVMType(abstractReturnType);
+    // We never return arrays (currently).
+    Type* returnType = AbstractTypeToLLVMType(abstractReturnType, 0);
 
     // Make Function.
     FunctionType* functionType = FunctionType::get(returnType, argumentTypes, variadic);
@@ -564,12 +574,13 @@ public:
     // function arguments via local variables.
     int i = 0;
     for (auto& arg: function->args()) {
-      arg.setName(arguments[i].first);
+      arg.setName(std::get<0>(arguments[i]));
       functionDeclaration.arguments.push_back(
-        CreateVariable(/* abstractType */ arguments[i].second,
+        CreateVariable(/* abstractType */ std::get<1>(arguments[i]),
                        /* variableName */ arg.getName(),
                        /* isGlobal     */ false,
-                       /* isArray      */ IsArrayType(arguments[i].second),
+                       /* isArray      */ IsArrayType(std::get<1>(arguments[i])),
+                       /* array_length */ std::get<2>(arguments[i]),
                        /* initialValue */ &arg)
       );
       i++;

@@ -7,16 +7,16 @@ int main() {
   CodeGen::Setup();
 
   //////// MAIN.
-  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  std::vector<std::tuple<std::string, AbstractType, int>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
-  std::vector<std::pair<std::string, AbstractType>> modifyArgsArguments =
+  std::vector<std::tuple<std::string, AbstractType, int>> modifyArgsArguments =
     {
-      std::make_pair("outInteger", AbstractType::IntegerRef),
-      std::make_pair("outFloat", AbstractType::FloatRef),
-      std::make_pair("outBool", AbstractType::BoolRef),
-      std::make_pair("outChar", AbstractType::CharRef),
-      std::make_pair("outString", AbstractType::StringRef),
+      std::make_tuple("outInteger", AbstractType::IntegerRef, 0),
+      std::make_tuple("outFloat", AbstractType::FloatRef, 0),
+      std::make_tuple("outBool", AbstractType::BoolRef, 0),
+      std::make_tuple("outChar", AbstractType::CharRef, 0),
+      std::make_tuple("outString", AbstractType::StringRef, 0),
     };
 
   // Create a function that takes a bunch of reference variables.
@@ -33,11 +33,11 @@ int main() {
 
   // Body of main.
   // Create future argument variables.
-  CodeGen::CreateVariable(AbstractType::Integer, "myInteger", false, false, CodeGen::ProduceInteger(123));
-  CodeGen::CreateVariable(AbstractType::Float, "myFloat", false, false, CodeGen::ProduceFloat(123.03493));
-  CodeGen::CreateVariable(AbstractType::Bool, "myBool", false, false, CodeGen::ProduceBool(false));
-  CodeGen::CreateVariable(AbstractType::Char, "myChar", false, false, CodeGen::ProduceChar('a'));
-  CodeGen::CreateVariable(AbstractType::String, "myString", false, false, CodeGen::ProduceString("initial"));
+  CodeGen::CreateVariable(AbstractType::Integer, "myInteger", false, false, 0, CodeGen::ProduceInteger(123));
+  CodeGen::CreateVariable(AbstractType::Float, "myFloat", false, false, 0, CodeGen::ProduceFloat(123.03493));
+  CodeGen::CreateVariable(AbstractType::Bool, "myBool", false, false, 0, CodeGen::ProduceBool(false));
+  CodeGen::CreateVariable(AbstractType::Char, "myChar", false, false, 0, CodeGen::ProduceChar('a'));
+  CodeGen::CreateVariable(AbstractType::String, "myString", false, false, 0, CodeGen::ProduceString("initial"));
 
   // Print "before" values.
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("Before:") });
