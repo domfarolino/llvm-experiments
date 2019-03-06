@@ -455,8 +455,8 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
-  // TODO(domfarolino): This is probably what |Assign| should be come; make note
-  // of this as an issue.
+  // TODO(domfarolino): See
+  // https://github.com/domfarolino/llvm-experiments/issues/31.
   static void Assign(Value* lhs, Value* rhs) {
     Builder.CreateStore(rhs, lhs);
   }
@@ -470,10 +470,11 @@ public:
     Builder.CreateStore(rhs, variable);
   }
 
-  // Creates a normal primitive or reference (pointer) to a primitive,
-  // optionally global. The only time |initialValue| will be passed in is when
+  // Creates a normal variable or reference (pointer) to a variable, optionally
+  // global. The only time |initialValue| will be passed in is when
   // |CreateVariable| is being called from |CreateFunction|, and the argument
-  // value is the |initialValue|.
+  // value is the |initialValue|. If |initialValue| is not passed in, an initial
+  // value will be computed, in non-array-type cases.
   static Value* CreateVariable(AbstractType abstractType,
                                const std::string& variableName,
                                bool isGlobal = false,
@@ -483,20 +484,10 @@ public:
     if (isGlobal)
       return CreateGlobalVariable(abstractType, variableName);
 
-    if (isArray && initialValue) {
-      // Assert: Unreachable; we haven't implemented this.
-      // TODO(domfarolino): Like this.
-      // At the time of writing, arrays are given initial values only when
-      // they are passed or copied by value. We have to copy the contents over
-      // via a sequence of element-by-element `store` instructions. We
-      // implicitly trust that the lengths match and that we won't run into any
-      // any issues, because the compiler's type checker should have ensured
-      // this for us to get here.
-    }
-
-    // |initialValue| is not always nullptr, for example, in the case of
-    // function parameters.
-    if (!initialValue)
+    // For non-array types that do not have an |initialValue|, we want to
+    // compute one. We don't do this for arrays, as arrays do not need to
+    // be "initialized".
+    if (!isArray && !initialValue)
       initialValue = CreateInitialValueGivenType(abstractType);
 
     // Allocates a stack variable in the current function's |entry| block.
@@ -507,12 +498,10 @@ public:
                                            AbstractTypeToLLVMType(abstractType),
                                            0, variableName.c_str());
 
-    // Arrays do not get initial values `store`d into them. If an initial value
-    // is provided, it is because the array was passed or copied by value, and
-    // we have to copy the contents of the array over via a sequence of `store`
-    // instructions, which we do in the `isArray` check above.
-    if (!isArray) {
-      // Assert: |initialValue| is non-null.
+    // |initialValue| will only be nullptr here when we're creating a
+    // non-parameter array.
+    // Assert: |initialValue| or |isArray|.
+    if (initialValue) {
       Builder.CreateStore(initialValue, argAlloca);
     }
     LocalVariables[variableName] = argAlloca;
@@ -577,16 +566,23 @@ public:
     for (auto& arg: function->args()) {
       arg.setName(arguments[i].first);
       functionDeclaration.arguments.push_back(
-        CreateVariable(/* abstractType */ arguments[i++].second,
+        CreateVariable(/* abstractType */ arguments[i].second,
                        /* variableName */ arg.getName(),
                        /* isGlobal     */ false,
-                       /* isArray      */ false,
+                       /* isArray      */ IsArrayType(arguments[i].second),
                        /* initialValue */ &arg)
       );
+      i++;
     }
 
     FunctionTable[name] = function;
     return functionDeclaration;
+  }
+
+  static bool IsArrayType(AbstractType abstract_type) {
+    // TODO(domfarolino): Add the other array types.
+    return abstract_type == AbstractType::IntegerArray ||
+           abstract_type == AbstractType::IntegerArrayRef;
   }
 
   static void Return() {
