@@ -43,6 +43,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("getX");
   return 0;
 }

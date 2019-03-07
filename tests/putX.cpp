@@ -18,6 +18,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("putX");
   return 0;
 }

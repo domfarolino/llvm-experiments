@@ -123,6 +123,6 @@ int main() {
   CodeGen::Return(integerAdderReturn);
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("sample");
   return 0;
 }

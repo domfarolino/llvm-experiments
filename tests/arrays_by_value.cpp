@@ -95,6 +95,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("arrays_by_value");
   return 0;
 }
