@@ -7,7 +7,7 @@ int main() {
   CodeGen::Setup();
 
   //////// MAIN.
-  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  std::vector<std::tuple<std::string, AbstractType, int>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
   CodeGen::CallFunction("putBool", { CodeGen::ProduceBool(true) });
@@ -18,6 +18,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("putX");
   return 0;
 }

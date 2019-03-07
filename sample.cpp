@@ -7,13 +7,13 @@ int main() {
   CodeGen::Setup();
 
   //////// MAIN.
-  std::vector<std::pair<std::string, AbstractType>> mainArguments;
+  std::vector<std::tuple<std::string, AbstractType, int>> mainArguments;
   CodeGen::CreateFunction("main", AbstractType::Integer, mainArguments);
 
         //////// FloatAdder.
-        std::vector<std::pair<std::string, AbstractType>> floatArguments = {
-          std::make_pair("floatLeft", AbstractType::Float),
-          std::make_pair("floatRight", AbstractType::Float)
+        std::vector<std::tuple<std::string, AbstractType, int>> floatArguments = {
+          std::make_tuple("floatLeft", AbstractType::Float, 0),
+          std::make_tuple("floatRight", AbstractType::Float, 0)
         };
         CodeGen::CreateFunction("FloatAdder", AbstractType::Float, floatArguments);
         Value* returnValue = CodeGen::DivideFloats(CodeGen::GetVariable("floatLeft"), CodeGen::GetVariable("floatRight"), "floatAddUltimateReturn");
@@ -26,9 +26,9 @@ int main() {
         //////// END FloatAdder.
 
         //////// IntegerAdder.
-        std::vector<std::pair<std::string, AbstractType>> integerArguments = {
-          std::make_pair("integerLeft", AbstractType::Integer),
-          std::make_pair("integerRight", AbstractType::Integer)
+        std::vector<std::tuple<std::string, AbstractType, int>> integerArguments = {
+          std::make_tuple("integerLeft", AbstractType::Integer, 0),
+          std::make_tuple("integerRight", AbstractType::Integer, 0)
         };
         CodeGen::CreateFunction("IntegerAdder", AbstractType::Integer, integerArguments );
         returnValue = CodeGen::DivideIntegers(CodeGen::GetVariable("integerLeft"), CodeGen::GetVariable("integerRight"), "integerAddUltimateReturn");
@@ -41,7 +41,7 @@ int main() {
         //////// END FloatAdder.
 
   /////// Function takes a integer.
-  CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_pair("integerArgument", AbstractType::Integer) });
+  CodeGen::CreateFunction("integerFunction", AbstractType::Void, { std::make_tuple("integerArgument", AbstractType::Integer, 0) });
   CodeGen::IfThen(CodeGen::LessThanIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(10)));               // if (integerArgument < 10) {
     CodeGen::IfThen(CodeGen::LessThanOrEqualIntegers(CodeGen::GetVariable("integerArgument"), CodeGen::ProduceInteger(5)));       //   if (integerArgument <= 5) {
       CodeGen::CallFunction("printf", { CodeGen::ProduceString("%d <= 5\n"), CodeGen::GetVariable("integerArgument")});           //     printf("%d <= 5\n", integerArgument);
@@ -59,11 +59,11 @@ int main() {
   CodeGen::EndFunction();
 
   /////// Function takes a float.
-  CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_pair("floatArgument", AbstractType::Float) });
+  CodeGen::CreateFunction("floatFunction", AbstractType::Void, { std::make_tuple("floatArgument", AbstractType::Float, 0) });
   CodeGen::EndFunction();
 
   /////// Factorial function.
-  CodeGen::CreateFunction("fibonacci", AbstractType::Integer, { std::make_pair("n", AbstractType::Integer) });
+  CodeGen::CreateFunction("fibonacci", AbstractType::Integer, { std::make_tuple("n", AbstractType::Integer, 0) });
   CodeGen::CreateVariable(AbstractType::Integer, "first");
   CodeGen::CreateVariable(AbstractType::Integer, "second");
   CodeGen::CreateVariable(AbstractType::Integer, "tmp");
@@ -80,7 +80,7 @@ int main() {
   CodeGen::EndFunction();
 
   /////// Function nSquared
-  CodeGen::CreateFunction("nSquared", AbstractType::Void, { std::make_pair("k", AbstractType::Integer) });
+  CodeGen::CreateFunction("nSquared", AbstractType::Void, { std::make_tuple("k", AbstractType::Integer, 0) });
   CodeGen::CreateVariable(AbstractType::Integer, "i");
   CodeGen::CreateVariable(AbstractType::Integer, "j");
 
@@ -100,11 +100,11 @@ int main() {
   CodeGen::EndFunction();
 
   /////// Function takes a char.
-  CodeGen::CreateFunction("charFunction", AbstractType::Void, { std::make_pair("charArgument", AbstractType::Char) });
+  CodeGen::CreateFunction("charFunction", AbstractType::Void, { std::make_tuple("charArgument", AbstractType::Char, 0) });
   CodeGen::EndFunction();
 
   /////// Function takes a string.
-  CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_pair("stringArgument", AbstractType::String) });
+  CodeGen::CreateFunction("stringFunction", AbstractType::Void, { std::make_tuple("stringArgument", AbstractType::String, 0) });
   CodeGen::EndFunction();
 
   Value* floatAdderReturn = CodeGen::CallFunction("FloatAdder", {CodeGen::ProduceFloat(42), CodeGen::ProduceFloat(38)}, "calladder");
@@ -123,6 +123,6 @@ int main() {
   CodeGen::Return(integerAdderReturn);
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode();
+  CodeGen::PrintBitCode("sample");
   return 0;
 }
