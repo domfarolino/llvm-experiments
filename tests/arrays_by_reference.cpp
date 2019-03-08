@@ -13,7 +13,7 @@ int main() {
   ///////////////////////////////////////////////////////////////////////////////////
   // Create a function that accepts an array by value.
   std::vector<std::tuple<std::string, AbstractType, int>> fn_args =
-    { std::make_tuple("input_array", AbstractType::IntegerArray, 10) };
+    { std::make_tuple("input_array", AbstractType::IntegerArrayRef, 10) };
   CodeGen::CreateFunction("takes_array", AbstractType::Void, fn_args);
     CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing given array values inside fn `input_array`") });
     CodeGen::CreateVariable(AbstractType::Integer, "i");
@@ -21,7 +21,7 @@ int main() {
     // Print all given array elements.
     CodeGen::For();
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")))   });
+      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::Load(CodeGen::GetVariableReference("input_array"), "input_array"), CodeGen::GetVariable("i")))   });
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
 
@@ -33,7 +33,7 @@ int main() {
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
       // Assign elements.
       CodeGen::CallFunction("putString", { CodeGen::ProduceString("Assigning array element inside fn `input_array`") });
-      CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(66));
+      CodeGen::Assign(CodeGen::IndexArray(CodeGen::Load(CodeGen::GetVariableReference("input_array"), "input_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(66));
 
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
@@ -45,7 +45,7 @@ int main() {
     CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing given array values inside fn `input_array`") });
     CodeGen::For();
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")))   });
+      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::Load(CodeGen::GetVariableReference("input_array"), "input_array"), CodeGen::GetVariable("i")))   });
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
 
@@ -78,7 +78,7 @@ int main() {
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
 
-  CodeGen::CallFunction("takes_array", {CodeGen::GetVariable("my_array")});
+  CodeGen::CallFunction("takes_array", {CodeGen::GetVariableReference("my_array")});
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
@@ -94,6 +94,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode("arrays_by_value");
+  CodeGen::PrintBitCode("arrays_by_reference");
   return 0;
 }

@@ -1,3 +1,4 @@
+./arrays_by_reference &> arrays_by_reference.ll &&
 ./arrays_by_value &> arrays_by_value.ll &&
 ./bitwise &> bitwise.ll &&
 ./boolTo &> boolTo.ll &&
@@ -9,6 +10,7 @@
 ./stringArg &> stringArg.ll &&
 ./getX &> getX.ll
 
+./arrays_by_reference.bin > arrays_by_reference.out
 ./arrays_by_value.bin > arrays_by_value.out
 ./bitwise.bin > bitwise.out &&
 ./boolTo.bin > boolTo.out &&
