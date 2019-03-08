@@ -27,12 +27,20 @@ enum AbstractType {
   IntegerArrayRef,
   Float,
   FloatRef,
+  FloatArray,
+  FloatArrayRef,
   Bool,
   BoolRef,
+  BoolArray,
+  BoolArrayRef,
   Char,
   CharRef,
+  CharArray,
+  CharArrayRef,
   String,
   StringRef,
+  StringArray,
+  StringArrayRef,
   Void, // This should be last.
 };
 
@@ -246,9 +254,25 @@ private:
     // Array types.
     else if (abstractType == AbstractType::IntegerArray)
       return ArrayType::get(Type::getInt32Ty(TheContext), array_size);
+    else if (abstractType == AbstractType::FloatArray)
+      return ArrayType::get(Type::getDoubleTy(TheContext), array_size);
+    else if (abstractType == AbstractType::BoolArray)
+      return ArrayType::get(Type::getInt1Ty(TheContext), array_size);
+    else if (abstractType == AbstractType::CharArray)
+      return ArrayType::get(Type::getInt8Ty(TheContext), array_size);
+    else if (abstractType == AbstractType::StringArray)
+      return ArrayType::get(Type::getInt8Ty(TheContext)->getPointerTo(), array_size);
     // Array reference types.
     else if (abstractType == AbstractType::IntegerArrayRef)
       return ArrayType::get(Type::getInt32Ty(TheContext), array_size)->getPointerTo();
+    else if (abstractType == AbstractType::FloatArrayRef)
+      return ArrayType::get(Type::getDoubleTy(TheContext), array_size)->getPointerTo();
+    else if (abstractType == AbstractType::BoolArrayRef)
+      return ArrayType::get(Type::getInt1Ty(TheContext), array_size)->getPointerTo();
+    else if (abstractType == AbstractType::CharArrayRef)
+      return ArrayType::get(Type::getInt8Ty(TheContext), array_size)->getPointerTo();
+    else if (abstractType == AbstractType::StringArrayRef)
+      return ArrayType::get(Type::getInt8Ty(TheContext)->getPointerTo(), array_size)->getPointerTo();
 
     // Assert: This is never reached.
     return Type::getDoubleTy(TheContext);
@@ -677,9 +701,20 @@ public:
   }
 
   static bool IsArrayType(AbstractType abstract_type) {
-    // TODO(domfarolino): Add the other array types.
+    // While it may actually be less writing to check if |abstract_type| is not
+    // one of the non-array types, this saves us from when we add more non-array
+    // types and potentially forget to update this method, because it would be
+    // non-obvious that we'd have to tamper with this.
     return abstract_type == AbstractType::IntegerArray ||
-           abstract_type == AbstractType::IntegerArrayRef;
+           abstract_type == AbstractType::IntegerArrayRef ||
+           abstract_type == AbstractType::FloatArray ||
+           abstract_type == AbstractType::FloatArrayRef ||
+           abstract_type == AbstractType::BoolArray ||
+           abstract_type == AbstractType::BoolArrayRef ||
+           abstract_type == AbstractType::CharArray ||
+           abstract_type == AbstractType::CharArrayRef ||
+           abstract_type == AbstractType::StringArray ||
+           abstract_type == AbstractType::StringArrayRef;
   }
 
   static void Return() {
