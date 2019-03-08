@@ -9,6 +9,7 @@
 ./stringArg &> stringArg.ll &&
 ./getX &> getX.ll
 
+./arrays_by_value.bin > arrays_by_value.out
 ./bitwise.bin > bitwise.out &&
 ./boolTo.bin > boolTo.out &&
 ./globalVariable.bin > globalVariable.out &&
@@ -17,4 +18,4 @@
 ./produceBool.bin > produceBool.out &&
 ./referenceVar.bin > referenceVar.out &&
 ./stringArg.bin > stringArg.out
-./arrays_by_value.bin > arrays_by_value.out
+./getX &> getX.ll

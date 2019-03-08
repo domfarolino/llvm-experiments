@@ -21,7 +21,7 @@ int main() {
     // Print all given array elements.
     CodeGen::For();
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-      CodeGen::CallFunction("putInteger", {  CodeGen::IndexArrayGetValue("input_array", CodeGen::GetVariable("i"))   });
+      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")))   });
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
 
@@ -33,7 +33,7 @@ int main() {
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
       // Assign elements.
       CodeGen::CallFunction("putString", { CodeGen::ProduceString("Assigning array element inside fn `input_array`") });
-      CodeGen::Assign(CodeGen::IndexArray("input_array", CodeGen::GetVariable("i")), CodeGen::ProduceInteger(66));
+      CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(66));
 
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
@@ -45,7 +45,7 @@ int main() {
     CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing given array values inside fn `input_array`") });
     CodeGen::For();
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-      CodeGen::CallFunction("putInteger", {  CodeGen::IndexArrayGetValue("input_array", CodeGen::GetVariable("i"))   });
+      CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("input_array"), CodeGen::GetVariable("i")))   });
       CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
     CodeGen::EndFor();
 
@@ -62,7 +62,7 @@ int main() {
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
     // Assign elements.
     CodeGen::CallFunction("putString", { CodeGen::ProduceString("Top-level assigning array element") });
-    CodeGen::Assign(CodeGen::IndexArray("my_array", CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("my_array"), CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
 
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
@@ -74,7 +74,7 @@ int main() {
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("Top-level printing given array values") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-    CodeGen::CallFunction("putInteger", {  CodeGen::IndexArrayGetValue("my_array", CodeGen::GetVariable("i"))   });
+    CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("my_array"), CodeGen::GetVariable("i")))   });
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
 
@@ -88,7 +88,7 @@ int main() {
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("Top-level printing given array values") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(10)));
-    CodeGen::CallFunction("putInteger", {  CodeGen::IndexArrayGetValue("my_array", CodeGen::GetVariable("i"))   });
+    CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("my_array"), CodeGen::GetVariable("i")))   });
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
 

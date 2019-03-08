@@ -454,6 +454,16 @@ public:
 
 ////////////////////////// Begin Variable Management //////////////////////////
 
+  // 🛑 [WARNING] 🛑 : These methods should only be used for testing ////////////
+  // They are considered testing-only, because they do fancy abstractions over
+  // the basic bare-necessity |Load()| and |Assign()| methods, which make
+  // testing easy, but aren't really necessary in the compiler project. Also
+  // they all take in a string argument representing the name of the variable
+  // they're operating on, which utilizes the |LocalVariables| map, which is a
+  // test-only substitution for a symbol table. Therefore, we should never use
+  // it in the context of an actual compiler, where the symbol Value*s are
+  // available to us from the table.
+
   // General get-the-value-of-a-variable function.
   static Value* GetVariable(const std::string& name) {
     if (!ShouldGenerate()) return nullptr;
@@ -462,9 +472,28 @@ public:
       return nullptr;
     }
 
-    Value* variableAlloca = LocalVariables[name];
+    Value* variable_alloca = LocalVariables[name];
     // This is probably going to be replaced by a call to ScopeManager::{lookup, getSymbol}.
-    return Builder.CreateLoad(variableAlloca, name.c_str());
+    return Builder.CreateLoad(variable_alloca, name.c_str());
+  }
+
+  // Similar to |GetVariable|, but instead of getting the value of a variable to
+  // be used variable, this gets a reference (pointer) to the variable |name|.
+  // It should mostly be used to pass a reference of a variable ("out" variable)
+  // to a function. Example:
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
+  //
+  // CodeGen::CallFunction("someFunc",
+  //   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
+  static Value* GetVariableReference(const std::string& name) {
+    if (!ShouldGenerate()) return nullptr;
+    if (LocalVariables.find(name) == LocalVariables.end()) {
+      std::cout << "Could not find variable with name: " << name << std::endl;
+      return nullptr;
+    }
+
+    return LocalVariables[name];
   }
 
   // This is used to dereference a variable of name |name| that we have a
@@ -490,25 +519,6 @@ public:
     return Builder.CreateLoad(firstLoad);
   }
 
-  // Similar to |GetVariable|, but instead of getting the value of a variable to
-  // be used variable, this gets a reference (pointer) to the variable |name|.
-  // It should mostly be used to pass a reference of a variable ("out" variable)
-  // to a function. Example:
-  // CodeGen::CallFunction("someFunc",
-  //   { CodeGen::GetVariable("someArg") }); // someFunc(someArg);
-  //
-  // CodeGen::CallFunction("someFunc",
-  //   { CodeGen::GetVariableReference("someArg") }); // someFunc(&someArg);
-  static Value* GetVariableReference(const std::string& name) {
-    if (!ShouldGenerate()) return nullptr;
-    if (LocalVariables.find(name) == LocalVariables.end()) {
-      std::cout << "Could not find variable with name: " << name << std::endl;
-      return nullptr;
-    }
-
-    return LocalVariables[name];
-  }
-
   // If we were to support chained assignments (x = y = 2), we may want the
   // implementations of |Assign| and |AssignReferenceVariable| to return the
   // |rhs| value.
@@ -518,26 +528,52 @@ public:
     // value as the LHS, but the "reference" to the value.
     Value* variable = LocalVariables[variableName];
     if (!variable) {
-      std::cout << "Could not find local variable with name: '" << variableName << "'" << std::endl;
+      std::cout << "Could not find local variable with name: '" <<
+      variableName << "'" << std::endl;
       return;
     }
 
     Builder.CreateStore(rhs, variable);
   }
 
-  // TODO(domfarolino): See
-  // https://github.com/domfarolino/llvm-experiments/issues/31.
-  static void Assign(Value* lhs, Value* rhs) {
-    Builder.CreateStore(rhs, lhs);
-  }
-
   // This is used to assign the value of a reference variable |variableName| to
   // |rhs|. It essentially is the same as |Assign|, but dereferences first.
-  static void AssignReferenceVariable(const std::string& variableName, Value* rhs) {
+  static void AssignReferenceVariable(const std::string& variableName,
+                                      Value* rhs) {
     if (!ShouldGenerate()) return;
     // We create a load here.
     Value* variable = GetVariable(variableName);
     Builder.CreateStore(rhs, variable);
+  }
+
+  // End ✅ [WARNING] ✅  ////////////////////////////////////////////////////
+
+  // The below Variable Management APIs are for "production" use, i.e.,
+  // primarily used in the compiler project. They are the bare-minimum to
+  // provide full variable and array functionality, and do not rely on the
+  // built-in pseudo-symbol-table. We can still, however, use these methods in
+  // tests, just by using |GetVariableReference()| whenever we need to get the
+  // Value* of some variable that would otherwise be provided to us by an
+  // external symbol table.
+
+  // Our main "given an AllocaInst*, return the loaded Value* of it" function.
+  static Value* Load(Value* value, const std::string& reg_name = "") {
+    if (!ShouldGenerate()) return nullptr;
+    return Builder.CreateLoad(value, reg_name.c_str());
+  }
+
+  // Given an AllocaInst* LHS and a Value* RHS whose type matches the type that
+  // the AllocaInst* refers to, store RHS into the LHS variable.
+  static void Assign(Value* lhs, Value* rhs) {
+    Builder.CreateStore(rhs, lhs);
+  }
+
+  // This takes in an array's AllocaInst* Value*, and a literal index value in
+  // Value*-form, and returns/creates a GEP (index, essentially) instruction to
+  // access the intended element.
+  static Value* IndexArray(Value* array_ptr, Value* index) {
+    auto zero = ConstantInt::get(TheContext, APInt(64, 0, true));
+    return Builder.CreateGEP(array_ptr, {zero, index}, "array-index");
   }
 
   // Creates a normal variable or reference (pointer) to a variable, optionally
@@ -578,20 +614,6 @@ public:
     }
     LocalVariables[variableName] = argAlloca;
     return argAlloca;
-  }
-
-  // TODO(domfarolino): Write documentation for this.
-  static Value* IndexArray(const std::string& array_name, Value* index) {
-    Value* array_ptr = GetVariableReference(array_name);
-    auto zero = ConstantInt::get(TheContext, APInt(64, 0, true));
-    return Builder.CreateGEP(array_ptr, {zero, index}, "array-index");
-  }
-  // TODO(domfarolino): Write documentation for this.
-  static Value* IndexArrayGetValue(const std::string& array_name,
-                                   Value* index) {
-    Value* array_ptr = GetVariableReference(array_name);
-    auto zero = ConstantInt::get(TheContext, APInt(64, 0, true));
-    return Builder.CreateLoad(Builder.CreateGEP(array_ptr, {zero, index}, "array-index"), "");
   }
 
 /////////////////////////// End Variable Management ///////////////////////////
