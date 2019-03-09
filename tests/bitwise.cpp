@@ -13,7 +13,7 @@ int main() {
   /////// Function takes a integer.
   CodeGen::CreateFunction("bitwiseAndInteger", AbstractType::Void, { std::make_tuple("arg1", AbstractType::Integer, 0), std::make_tuple("arg2", AbstractType::Integer, 0) });
   CodeGen::CreateVariable(AbstractType::Integer, "bitwiseResult");
-  CodeGen::Assign("bitwiseResult", CodeGen::BitwiseAndIntegers(CodeGen::GetVariable("arg1"), CodeGen::GetVariable("arg2")));
+  CodeGen::Assign("bitwiseResult", CodeGen::And(CodeGen::GetVariable("arg1"), CodeGen::GetVariable("arg2")));
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("bitwise and result:") });
   CodeGen::CallFunction("putInteger", { CodeGen::GetVariable("bitwiseResult") });
   CodeGen::EndFunction();
@@ -21,7 +21,7 @@ int main() {
   /////// Function takes a integer.
   CodeGen::CreateFunction("bitwiseOrInteger", AbstractType::Void, { std::make_tuple("arg1", AbstractType::Integer, 0), std::make_tuple("arg2", AbstractType::Integer, 0) });
   CodeGen::CreateVariable(AbstractType::Integer, "bitwiseResult");
-  CodeGen::Assign("bitwiseResult", CodeGen::BitwiseOrIntegers(CodeGen::GetVariable("arg1"), CodeGen::GetVariable("arg2")));
+  CodeGen::Assign("bitwiseResult", CodeGen::Or(CodeGen::GetVariable("arg1"), CodeGen::GetVariable("arg2")));
   CodeGen::CallFunction("putString", { CodeGen::ProduceString("bitwise or result:") });
   CodeGen::CallFunction("putInteger", { CodeGen::GetVariable("bitwiseResult") });
   CodeGen::EndFunction();

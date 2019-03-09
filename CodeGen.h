@@ -424,11 +424,11 @@ public:
     if (!ShouldGenerate()) return nullptr;
     return Builder.CreateSDiv(lhs, rhs, regName);
   }
-  static Value* BitwiseAndIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+  static Value* And(Value* lhs, Value* rhs, const std::string& regName = "") {
     if (!ShouldGenerate()) return nullptr;
     return Builder.CreateAnd(lhs, rhs, regName);
   }
-  static Value* BitwiseOrIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
+  static Value* Or(Value* lhs, Value* rhs, const std::string& regName = "") {
     if (!ShouldGenerate()) return nullptr;
     return Builder.CreateOr(lhs, rhs, regName);
   }

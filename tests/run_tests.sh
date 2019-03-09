@@ -1,27 +1,29 @@
 ./add_arrays &> add_arrays.ll &&
 ./arrays_by_reference &> arrays_by_reference.ll &&
 ./arrays_by_value &> arrays_by_value.ll &&
-./string_array_by_reference &> string_array_by_reference.ll &&
 ./bitwise &> bitwise.ll &&
 ./boolTo &> boolTo.ll &&
+./getX &> getX.ll
 ./globalVariable &> globalVariable.ll &&
+./logical_operators &> logical_operators.ll &&
 ./negate &> negate.ll &&
-./putX &> putX.ll &&
 ./produceBool &> produceBool.ll &&
+./putX &> putX.ll &&
 ./referenceVar &> referenceVar.ll &&
 ./stringArg &> stringArg.ll &&
-./getX &> getX.ll
+./string_array_by_reference &> string_array_by_reference.ll &&
 
 ./add_arrays.bin > add_arrays.out
 ./arrays_by_reference.bin > arrays_by_reference.out
 ./arrays_by_value.bin > arrays_by_value.out
-./string_array_by_reference.bin > string_array_by_reference.out
 ./bitwise.bin > bitwise.out &&
 ./boolTo.bin > boolTo.out &&
+./getX &> getX.ll
 ./globalVariable.bin > globalVariable.out &&
+./logical_operators.bin > logical_operators.out &&
 ./negate.bin > negate.out &&
-./putX.bin > putX.out &&
 ./produceBool.bin > produceBool.out &&
+./putX.bin > putX.out &&
 ./referenceVar.bin > referenceVar.out &&
 ./stringArg.bin > stringArg.out
-./getX &> getX.ll
+./string_array_by_reference.bin > string_array_by_reference.out
