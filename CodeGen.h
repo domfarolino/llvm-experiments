@@ -484,8 +484,110 @@ public:
   }
 
   // Array operators.
+  static Value* AndSingleArray(Value* left_val, Value* right_array,
+                               int array_size, AbstractType primitive_type) {
+    // |left_val|: the value we'll "&" all of the array elements with.
+    // |right_array|: the array.
+
+    AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
+    // Assert: (return_array_type == AbstractType::IntegerArray ||
+    //          return_array_type == AbstractType::BoolArray)
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
+  }
+  static Value* OrSingleArray(Value* left_val, Value* right_array, int array_size,
+                               AbstractType primitive_type) {
+    // |left_val|: the value we'll "|" all of the array elements with.
+    // |right_array|: the array.
+
+    AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
+    // Assert: (return_array_type == AbstractType::IntegerArray ||
+    //          return_array_type == AbstractType::BoolArray)
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
+  }
+  static Value* AndArrays(Value* left_array, Value* right_array, int array_size,
+                          AbstractType primitive_type) {
+    AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
+    // Assert: (return_array_type == AbstractType::IntegerArray ||
+    //          return_array_type == AbstractType::BoolArray)
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Left & right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left_array, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
+  }
+  static Value* OrArrays(Value* left_array, Value* right_array, int array_size,
+                          AbstractType primitive_type) {
+    AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
+    // Assert: (return_array_type == AbstractType::IntegerArray ||
+    //          return_array_type == AbstractType::BoolArray)
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Left & right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left_array, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
+  }
+
   // TODO(domfarolino): Factor the below duplication out before adding more
   // array operation implementations.
+  // TODO(domfarolino): Have these not return a Load(...)ed array value.
   static Value* AddIntegerArrays(Value* left, Value* right, int array_size) {
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(AbstractType::IntegerArray, "$tmp_arr$", false, true, array_size);
@@ -758,6 +860,22 @@ public:
            abstract_type == AbstractType::CharArrayRef ||
            abstract_type == AbstractType::StringArray ||
            abstract_type == AbstractType::StringArrayRef;
+  }
+
+  static AbstractType ArrayTypeFromPrimitive(AbstractType primitive_type) {
+    if (primitive_type == AbstractType::Integer)
+      return AbstractType::IntegerArray;
+    else if (primitive_type == AbstractType::Float)
+      return AbstractType::FloatArray;
+    else if (primitive_type == AbstractType::Bool)
+      return AbstractType::BoolArray;
+    else if (primitive_type == AbstractType::Char)
+      return AbstractType::CharArray;
+    else if (primitive_type == AbstractType::String)
+      return AbstractType::StringArray;
+
+    // Assert: Unreached.
+    return AbstractType::IntegerArray;
   }
 
   static void Return() {

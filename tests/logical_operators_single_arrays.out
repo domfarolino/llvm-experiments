@@ -1,0 +1,28 @@
+Printing |result_int_array| after |AndSingleArray()|:
+0
+0
+2
+2
+0
+0
+Printing |result_bool_array| after |AndSingleArray()|:
+0
+0
+0
+0
+0
+0
+Printing |result_int_array| after |OrSingleArray()|:
+2
+3
+2
+3
+6
+7
+Printing |result_bool_array| after |OrSingleArray()|:
+1
+1
+1
+1
+1
+1

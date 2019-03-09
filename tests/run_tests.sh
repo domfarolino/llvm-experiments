@@ -6,6 +6,8 @@
 ./getX &> getX.ll
 ./globalVariable &> globalVariable.ll &&
 ./logical_operators &> logical_operators.ll &&
+./logical_operators_single_arrays &> logical_operators_single_arrays.ll &&
+./logical_operators_arrays &> logical_operators_arrays.ll &&
 ./negate &> negate.ll &&
 ./produceBool &> produceBool.ll &&
 ./putX &> putX.ll &&
@@ -21,6 +23,8 @@
 ./getX &> getX.ll
 ./globalVariable.bin > globalVariable.out &&
 ./logical_operators.bin > logical_operators.out &&
+./logical_operators_single_arrays.bin > logical_operators_single_arrays.out &&
+./logical_operators_arrays.bin > logical_operators_arrays.out &&
 ./negate.bin > negate.out &&
 ./produceBool.bin > produceBool.out &&
 ./putX.bin > putX.out &&
