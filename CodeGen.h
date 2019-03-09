@@ -374,6 +374,13 @@ public:
     return Builder.CreateGlobalStringPtr(str);
   }
 
+  static Constant* ProduceIntegerArray(int array_size) {
+    return ConstantArray::get(ArrayType::get(Type::getInt32Ty(TheContext),
+                                array_size),
+                              std::vector<Constant*>(array_size,
+                                                     ProduceInteger(0)));
+  }
+
   // Unary operators.
   static Value* NegateInteger(Value* value) {
     if (!ShouldGenerate()) return nullptr;
@@ -474,6 +481,42 @@ public:
   static Value* NotEqualIntegers(Value* lhs, Value* rhs, const std::string& regName = "") {
     if (!ShouldGenerate()) return nullptr;
     return Builder.CreateICmpNE(lhs, rhs, regName);
+  }
+
+  // Array operators.
+  // TODO(domfarolino): Factor the below duplication out before adding more
+  // array operation implementations.
+  static Value* AddIntegerArrays(Value* left, Value* right, int array_size) {
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(AbstractType::IntegerArray, "$tmp_arr$", false, true, array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Left & right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::AddIntegers(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+    return Load(return_array);
+  }
+  static Value* AddFloatArrays(Value* left, Value* right, int array_size) {
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(AbstractType::FloatArray, "$tmp_arr$", false, true, array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Left & right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::AddFloats(left_val, right_val));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+    return Load(return_array);
   }
 
 ////////////////////////// Begin Variable Management //////////////////////////
