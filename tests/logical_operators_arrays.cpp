@@ -36,13 +36,11 @@ int main() {
   // result_int_array = first_int_array & second_int_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::AndArrays(CodeGen::GetVariableReference("first_int_array"),
-                                                   CodeGen::GetVariableReference("second_int_array"),
-                                                   AbstractType::Integer)));
+                                                   CodeGen::GetVariableReference("second_int_array"))));
   // result_bool_array = first_bool_array & second_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::AndArrays(CodeGen::GetVariableReference("first_bool_array"),
-                                                   CodeGen::GetVariableReference("second_bool_array"),
-                                                   AbstractType::Bool)));
+                                                   CodeGen::GetVariableReference("second_bool_array"))));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
@@ -81,13 +79,11 @@ int main() {
   // result_int_array = & result_int_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("first_int_array"),
-                                                  CodeGen::GetVariableReference("second_int_array"),
-                                                  AbstractType::Integer)));
+                                                  CodeGen::GetVariableReference("second_int_array"))));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("first_bool_array"),
-                                                  CodeGen::GetVariableReference("result_bool_array"),
-                                                  AbstractType::Bool)));
+                                                  CodeGen::GetVariableReference("result_bool_array"))));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
