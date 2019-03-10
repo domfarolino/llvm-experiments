@@ -3,6 +3,7 @@
 #include <stack>
 #include <vector>
 #include <utility> // for std::tuple.
+#include <cassert>
 
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -20,6 +21,8 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 using namespace llvm;
+
+#define NOT_REACHED false
 
 enum AbstractType {
   Integer,
@@ -52,10 +55,10 @@ static std::unique_ptr<Module> TheModule;
 struct IfBlocks {
   Value* Condition;
   BasicBlock *ThenBB, *ElseBB, *MergeBB;
-  IfBlocks(Value* inCondition,
+  IfBlocks(Value* in_condition,
            BasicBlock* inThenBB,
            BasicBlock* inElseBB,
-           BasicBlock* inMergeBB): Condition(inCondition),
+           BasicBlock* inMergeBB): Condition(in_condition),
                                    ThenBB(inThenBB),
                                    ElseBB(inElseBB),
                                    MergeBB(inMergeBB) {}
@@ -124,7 +127,7 @@ private:
     else if (abstractType == AbstractType::String)
       return ProduceString("");
 
-    // Assert: unreached.
+    assert(NOT_REACHED);
     return nullptr;
   }
 
@@ -224,58 +227,58 @@ private:
   }
 
   // Used as a helper.
-  static Type* AbstractTypeToLLVMType(AbstractType abstractType,
+  static Type* AbstractTypeToLLVMType(AbstractType abstract_type,
                                       int array_size) {
-    // Assert: (IsArrayType(abstract_type) && array_size) ||
-    //         (!IsArrayType(abstract_type) && !array_size).
+    assert((IsArrayType(abstract_type) && array_size) ||
+          (!IsArrayType(abstract_type) && !array_size));
     // Primitive types.
-    if (abstractType == AbstractType::Integer)
+    if (abstract_type == AbstractType::Integer)
       return Type::getInt32Ty(TheContext);
-    else if (abstractType == AbstractType::Float)
+    else if (abstract_type == AbstractType::Float)
       return Type::getDoubleTy(TheContext);
-    else if (abstractType == AbstractType::Bool)
+    else if (abstract_type == AbstractType::Bool)
       return Type::getInt1Ty(TheContext);
-    else if (abstractType == AbstractType::Char)
+    else if (abstract_type == AbstractType::Char)
       return Type::getInt8Ty(TheContext);
-    else if (abstractType == AbstractType::String)
+    else if (abstract_type == AbstractType::String)
       return Type::getInt8Ty(TheContext)->getPointerTo();
-    else if (abstractType == AbstractType::Void)
+    else if (abstract_type == AbstractType::Void)
       return Type::getVoidTy(TheContext);
     // Primitive reference (pointer) types.
-    else if (abstractType == AbstractType::IntegerRef)
+    else if (abstract_type == AbstractType::IntegerRef)
       return Type::getInt32Ty(TheContext)->getPointerTo();
-    else if (abstractType == AbstractType::FloatRef)
+    else if (abstract_type == AbstractType::FloatRef)
       return Type::getDoubleTy(TheContext)->getPointerTo();
-    else if (abstractType == AbstractType::BoolRef)
+    else if (abstract_type == AbstractType::BoolRef)
       return Type::getInt1Ty(TheContext)->getPointerTo();
-    else if (abstractType == AbstractType::CharRef)
+    else if (abstract_type == AbstractType::CharRef)
       return Type::getInt8Ty(TheContext)->getPointerTo();
-    else if (abstractType == AbstractType::StringRef)
+    else if (abstract_type == AbstractType::StringRef)
       return Type::getInt8Ty(TheContext)->getPointerTo()->getPointerTo();
     // Array types.
-    else if (abstractType == AbstractType::IntegerArray)
+    else if (abstract_type == AbstractType::IntegerArray)
       return ArrayType::get(Type::getInt32Ty(TheContext), array_size);
-    else if (abstractType == AbstractType::FloatArray)
+    else if (abstract_type == AbstractType::FloatArray)
       return ArrayType::get(Type::getDoubleTy(TheContext), array_size);
-    else if (abstractType == AbstractType::BoolArray)
+    else if (abstract_type == AbstractType::BoolArray)
       return ArrayType::get(Type::getInt1Ty(TheContext), array_size);
-    else if (abstractType == AbstractType::CharArray)
+    else if (abstract_type == AbstractType::CharArray)
       return ArrayType::get(Type::getInt8Ty(TheContext), array_size);
-    else if (abstractType == AbstractType::StringArray)
+    else if (abstract_type == AbstractType::StringArray)
       return ArrayType::get(Type::getInt8Ty(TheContext)->getPointerTo(), array_size);
     // Array reference types.
-    else if (abstractType == AbstractType::IntegerArrayRef)
+    else if (abstract_type == AbstractType::IntegerArrayRef)
       return ArrayType::get(Type::getInt32Ty(TheContext), array_size)->getPointerTo();
-    else if (abstractType == AbstractType::FloatArrayRef)
+    else if (abstract_type == AbstractType::FloatArrayRef)
       return ArrayType::get(Type::getDoubleTy(TheContext), array_size)->getPointerTo();
-    else if (abstractType == AbstractType::BoolArrayRef)
+    else if (abstract_type == AbstractType::BoolArrayRef)
       return ArrayType::get(Type::getInt1Ty(TheContext), array_size)->getPointerTo();
-    else if (abstractType == AbstractType::CharArrayRef)
+    else if (abstract_type == AbstractType::CharArrayRef)
       return ArrayType::get(Type::getInt8Ty(TheContext), array_size)->getPointerTo();
-    else if (abstractType == AbstractType::StringArrayRef)
+    else if (abstract_type == AbstractType::StringArrayRef)
       return ArrayType::get(Type::getInt8Ty(TheContext)->getPointerTo(), array_size)->getPointerTo();
 
-    // Assert: This is never reached.
+    assert(NOT_REACHED);
     return Type::getDoubleTy(TheContext);
   }
 
@@ -486,14 +489,15 @@ public:
 
   // Array operators.
   static Value* AndSingleArray(Value* left_val, Value* right_array) {
-    int array_size = ArrayLength(right_array);
+    int array_size = ArraySize(right_array);
     // |left_val|: the value we'll "&" all of the array elements with.
     // |right_array|: the array.
 
     AbstractType return_array_type = AbstractTypeFromValue(right_array);
-    // Assert: (return_array_type == AbstractType::IntegerArray ||
-    //          return_array_type == AbstractType::BoolArray)
-    // Assert: return_array_type == ArrayTypeFromPrimitive(left_val).
+    assert(return_array_type == AbstractType::IntegerArray ||
+           return_array_type == AbstractType::BoolArray);
+    assert(return_array_type ==
+           ArrayTypeFromPrimitive(AbstractTypeFromValue(left_val)));
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(return_array_type,
@@ -513,14 +517,15 @@ public:
     return return_array;
   }
   static Value* OrSingleArray(Value* left_val, Value* right_array) {
-    int array_size = ArrayLength(right_array);
+    int array_size = ArraySize(right_array);
     // |left_val|: the value we'll "|" all of the array elements with.
     // |right_array|: the array.
 
     AbstractType return_array_type = AbstractTypeFromValue(right_array);
-    // Assert: (return_array_type == AbstractType::IntegerArray ||
-    //          return_array_type == AbstractType::BoolArray)
-    // Assert: return_array_type == ArrayTypeFromPrimitive(left_val).
+    assert(return_array_type == AbstractType::IntegerArray ||
+           return_array_type == AbstractType::BoolArray);
+    assert(return_array_type ==
+           ArrayTypeFromPrimitive(AbstractTypeFromValue(left_val)));
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(return_array_type,
@@ -540,13 +545,13 @@ public:
     return return_array;
   }
   static Value* AndArrays(Value* left, Value* right) {
-    int array_size = ArrayLength(left);
-    // Assert: array_size == ArrayLength(right);
+    int array_size = ArraySize(left);
+    assert(array_size == ArraySize(right));
 
     AbstractType return_array_type = AbstractTypeFromValue(left);
-    // Assert: (return_array_type == AbstractType::IntegerArray ||
-    //          return_array_type == AbstractType::BoolArray)
-    // Assert: return_array_type == AbstractTypeFromValue(right);
+    assert(return_array_type == AbstractType::IntegerArray ||
+           return_array_type == AbstractType::BoolArray);
+    assert(return_array_type == AbstractTypeFromValue(right));
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(return_array_type,
@@ -567,13 +572,13 @@ public:
     return return_array;
   }
   static Value* OrArrays(Value* left, Value* right) {
-    int array_size = ArrayLength(left);
-    // Assert: array_size == ArrayLength(right);
+    int array_size = ArraySize(left);
+    assert(array_size == ArraySize(right));
 
     AbstractType return_array_type = AbstractTypeFromValue(left);
-    // Assert: (return_array_type == AbstractType::IntegerArray ||
-    //          return_array_type == AbstractType::BoolArray)
-    // Assert: return_array_type == AbstractTypeFromValue(right);
+    assert(return_array_type == AbstractType::IntegerArray ||
+           return_array_type == AbstractType::BoolArray);
+    assert(return_array_type == AbstractTypeFromValue(right));
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(return_array_type,
@@ -595,8 +600,8 @@ public:
   }
   // Can accept any combinnationn of integer[] and float[] arrays.
   static Value* AddArrays(Value* left, Value* right) {
-    int array_size = ArrayLength(left);
-    // Assert: array_size == ArrayLength(right);
+    int array_size = ArraySize(left);
+    assert(array_size == ArraySize(right));
 
     Type *left_primitive_type = ArrayPrimitiveType(left),
          *right_primitive_type = ArrayPrimitiveType(right);
@@ -880,7 +885,8 @@ public:
            abstract_type == AbstractType::StringArrayRef;
   }
 
-  static int ArrayLength(Value* array) {
+  static int ArraySize(Value* array) {
+    assert(IsArrayType(AbstractTypeFromValue(array)));
     Type *T = cast<PointerType>(cast<GetElementPtrInst>(
                 CodeGen::IndexArray(array, CodeGen::ProduceInteger(0)))
               ->getPointerOperandType())->getElementType();
@@ -919,8 +925,7 @@ public:
     else if (type->isIntegerTy() && static_cast<IntegerType*>(type)->getBitWidth() == 1)
       return AbstractType::Bool;
 
-
-    // Assert: Unreached.
+    assert(NOT_REACHED);
     return AbstractType::Void;
   }
 
@@ -936,7 +941,7 @@ public:
     else if (primitive_type == AbstractType::String)
       return AbstractType::StringArray;
 
-    // Assert: Unreached.
+    assert(NOT_REACHED);
     return AbstractType::IntegerArray;
   }
 
@@ -976,11 +981,14 @@ public:
     return Builder.CreateCall(function, args, regName);
   }
 
-  static void IfThen(Value* inCondition) {
+  static void IfThen(Value* in_condition) {
     if (!ShouldGenerate()) return;
-    inCondition = ToBool(inCondition);
-    // Assert: |inCondition| is now an integer type, whose width is 1. See
+    in_condition = ToBool(in_condition);
+    // |in_condition| is now an integer type, whose width is 1. See
     // http://llvm.org/doxygen/Type_8h_source.html#l00199.
+    Type* cond_type = in_condition->getType();
+    assert(cond_type->isIntegerTy() &&
+           static_cast<IntegerType*>(cond_type)->getBitWidth() == 1);
 
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
 
@@ -988,8 +996,8 @@ public:
     BasicBlock *ThenBB = BasicBlock::Create(TheContext, "then", currentFunction),
                *ElseBB = BasicBlock::Create(TheContext, "else"),
                *MergeBB = BasicBlock::Create(TheContext, "ifmerge");
-    IfBlocksStack.push(IfBlocks(inCondition, ThenBB, ElseBB, MergeBB));
-    Builder.CreateCondBr(inCondition, ThenBB, ElseBB);
+    IfBlocksStack.push(IfBlocks(in_condition, ThenBB, ElseBB, MergeBB));
+    Builder.CreateCondBr(in_condition, ThenBB, ElseBB);
 
     // Start generating code into |ThenBB|.
     ReplaceInsertionBlock(ThenBB);
@@ -1002,7 +1010,7 @@ public:
     // the current function's list of BasicBlocks, and start generating into
     // |ElseBB|.
 
-    // Assert: !IfBlocksStack.empty().
+    assert(!IfBlocksStack.empty());
     IfBlocks CurrentIfBlock = IfBlocksStack.top();
     if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
 
@@ -1021,7 +1029,8 @@ public:
 
   static void EndIf() {
     if (ErrorState || IfBlocksStack.empty()) return;
-    // Assert: !IfBlocksStack.empty().
+
+    assert(!IfBlocksStack.empty());
     IfBlocks CurrentIfBlock = IfBlocksStack.top();
     // See Else().
     if (!PendingReturn) Builder.CreateBr(CurrentIfBlock.MergeBB);
@@ -1059,18 +1068,21 @@ public:
     ReplaceInsertionBlock(CondEvalBB);
   }
 
-  static void ForCondition(Value* inCondition) {
+  static void ForCondition(Value* in_condition) {
     if (!ShouldGenerate()) return;
-    inCondition = ToBool(inCondition);
-    // Assert: |inCondition| is now an integer type, whose width is 1. See
+    in_condition = ToBool(in_condition);
+    // |in_condition| is now an integer type, whose width is 1. See
     // http://llvm.org/doxygen/Type_8h_source.html#l00199.
+    Type* cond_type = in_condition->getType();
+    assert(cond_type->isIntegerTy() &&
+           static_cast<IntegerType*>(cond_type)->getBitWidth() == 1);
 
     ForLoopBlocks CurrentForLoopBlock = ForLoopBlocksStack.top();
     Function* currentFunction = Builder.GetInsertBlock()->getParent();
     currentFunction->getBasicBlockList().push_back(CurrentForLoopBlock.LoopBB);
 
     // Start generating code into |LoopBB|.
-    Builder.CreateCondBr(inCondition, CurrentForLoopBlock.LoopBB, CurrentForLoopBlock.PostLoopBB);
+    Builder.CreateCondBr(in_condition, CurrentForLoopBlock.LoopBB, CurrentForLoopBlock.PostLoopBB);
     ReplaceInsertionBlock(CurrentForLoopBlock.LoopBB);
   }
 
@@ -1110,7 +1122,8 @@ public:
     else if (static_cast<IntegerType*>(input->getType())->getBitWidth() == 32)
       return CastIntegerToBool(input);
 
-    // Assert: getBitWidth == 1 (already a bool).
+    // getBitWidth == 1 (already a bool).
+    assert(static_cast<IntegerType*>(input->getType())->getBitWidth() == 1);
     return input;
   }
 
@@ -1184,7 +1197,7 @@ public:
   }
 
   static Value* CastIntegerArrayToFloatArray(Value* integer_array) {
-    int array_size = ArrayLength(integer_array);
+    int array_size = ArraySize(integer_array);
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(AbstractType::FloatArray,
