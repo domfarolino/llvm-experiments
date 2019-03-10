@@ -1,25 +1,25 @@
-Printing |result_int_array| after |AndSingleArray()|:
+Printing |result_int_array| after |AndArrays()|:
 0
 0
 2
 2
 0
 0
-Printing |result_bool_array| after |AndSingleArray()|:
+Printing |result_bool_array| after |AndArrays()|:
 0
 0
 0
 0
 0
 0
-Printing |result_int_array| after |OrSingleArray()|:
+Printing |result_int_array| after |OrArrays()|:
 2
 3
 2
 3
 6
 7
-Printing |result_bool_array| after |OrSingleArray()|:
+Printing |result_bool_array| after |OrArrays()|:
 1
 1
 1

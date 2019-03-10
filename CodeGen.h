@@ -584,11 +584,10 @@ public:
 
     return return_array;
   }
+  static Value* AddIntegerArrays(Value* left, Value* right) {
+    int array_size = ArrayLength(left);
+    // Assert: array_size == ArrayLength(right);
 
-  // TODO(domfarolino): Factor the below duplication out before adding more
-  // array operation implementations.
-  // TODO(domfarolino): Have these not return a Load(...)ed array value.
-  static Value* AddIntegerArrays(Value* left, Value* right, int array_size) {
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(AbstractType::IntegerArray, "$tmp_arr$", false, true, array_size);
     CodeGen::For();
@@ -602,9 +601,12 @@ public:
       CodeGen::Assign(return_array_element, CodeGen::AddIntegers(left_val, right_val));
       CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
     CodeGen::EndFor();
-    return Load(return_array);
+    return return_array;
   }
-  static Value* AddFloatArrays(Value* left, Value* right, int array_size) {
+  static Value* AddFloatArrays(Value* left, Value* right) {
+    int array_size = ArrayLength(left);
+    // Assert: array_size == ArrayLength(right);
+
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
     Value* return_array = CodeGen::CreateVariable(AbstractType::FloatArray, "$tmp_arr$", false, true, array_size);
     CodeGen::For();
@@ -618,7 +620,7 @@ public:
       CodeGen::Assign(return_array_element, CodeGen::AddFloats(left_val, right_val));
       CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
     CodeGen::EndFor();
-    return Load(return_array);
+    return return_array;
   }
 
 ////////////////////////// Begin Variable Management //////////////////////////
@@ -862,6 +864,13 @@ public:
            abstract_type == AbstractType::StringArrayRef;
   }
 
+  static int ArrayLength(Value* array) {
+    Type *T = cast<PointerType>(cast<GetElementPtrInst>(
+                CodeGen::IndexArray(array, CodeGen::ProduceInteger(0)))
+              ->getPointerOperandType())->getElementType();
+    return cast<ArrayType>(T)->getNumElements();
+  }
+
   static AbstractType ArrayTypeFromPrimitive(AbstractType primitive_type) {
     if (primitive_type == AbstractType::Integer)
       return AbstractType::IntegerArray;
@@ -1031,12 +1040,13 @@ public:
 ///////////////////////////////// Begin Casts /////////////////////////////////
 // This subsection consists of various casting algorithms implemented on top of
 // the LLVM builder APIs. The following casts are implemented so far:
-//   - Float   => Integer
-//   - Float   => Bool
-//   - Integer => Float
-//   - Integer => Bool
-//   - Bool    => Integer
-//   - Bool    => Float
+//   - Float        => Integer
+//   - Float        => Bool
+//   - Integer      => Float
+//   - Integer      => Bool
+//   - Bool         => Integer
+//   - Bool         => Float
+//   - IntegerArray => FloatArray
 
   // This function should only be called whenever the input Value* is
   // guaranteed to be boolean-equivalent.
@@ -1118,6 +1128,27 @@ public:
 
     // float something = integer(someBoolean);
     return CastIntegerToFloat(CastBoolToInteger(input));
+  }
+
+  static Value* CastIntegerArrayToFloatArray(Value* integer_array) {
+    /* Find total number of elements in array */
+    int array_size = CodeGen::ArrayLength(integer_array);
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(AbstractType::FloatArray,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* integer_element = CodeGen::Load(CodeGen::IndexArray(integer_array , CodeGen::Load(i)));
+
+      // Assign elements.
+      CodeGen::Assign(return_array_element, CodeGen::CastIntegerToFloat(integer_element));
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
   }
 
 ////////////////////////////////// End Casts //////////////////////////////////

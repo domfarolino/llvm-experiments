@@ -48,28 +48,24 @@ int main() {
   CodeGen::EndFor();
 
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::AddIntegerArrays(
+                  CodeGen::Load(CodeGen::AddIntegerArrays(
                     CodeGen::GetVariableReference("first_int_array"),
-                    CodeGen::GetVariableReference("second_int_array"),
-                    6)
+                    CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::AddIntegerArrays(
+                  CodeGen::Load(CodeGen::AddIntegerArrays(
                     CodeGen::GetVariableReference("first_int_array"),
-                    CodeGen::GetVariableReference("second_int_array"),
-                    6)
+                    CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::AddFloatArrays(
+                  CodeGen::Load(CodeGen::AddFloatArrays(
                     CodeGen::GetVariableReference("first_float_array"),
-                    CodeGen::GetVariableReference("second_float_array"),
-                    6)
+                    CodeGen::GetVariableReference("second_float_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::AddFloatArrays(
+                  CodeGen::Load(CodeGen::AddFloatArrays(
                     CodeGen::GetVariableReference("first_float_array"),
-                    CodeGen::GetVariableReference("second_float_array"),
-                    6)
+                    CodeGen::GetVariableReference("second_float_array")))
                  );
 
   // Reset i = 0, for next loop.

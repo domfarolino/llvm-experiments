@@ -5,6 +5,7 @@
 ./boolTo &> boolTo.ll &&
 ./getX &> getX.ll
 ./globalVariable &> globalVariable.ll &&
+./integer_array_to_float &> integer_array_to_float.ll &&
 ./logical_operators &> logical_operators.ll &&
 ./logical_operators_single_arrays &> logical_operators_single_arrays.ll &&
 ./logical_operators_arrays &> logical_operators_arrays.ll &&
@@ -22,6 +23,7 @@
 ./boolTo.bin > boolTo.out &&
 ./getX &> getX.ll
 ./globalVariable.bin > globalVariable.out &&
+./integer_array_to_float.bin &> integer_array_to_float.out &&
 ./logical_operators.bin > logical_operators.out &&
 ./logical_operators_single_arrays.bin > logical_operators_single_arrays.out &&
 ./logical_operators_arrays.bin > logical_operators_arrays.out &&
