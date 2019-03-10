@@ -489,6 +489,13 @@ public:
 
   // Array operators.
   static Value* AndSingleArray(Value* left_val, Value* right_array) {
+    return BitwiseSingleArrayImpl(left_val, right_array, true);
+  }
+  static Value* OrSingleArray(Value* left_val, Value* right_array) {
+    return BitwiseSingleArrayImpl(left_val, right_array, false);
+  }
+  static Value* BitwiseSingleArrayImpl(Value* left_val, Value* right_array,
+                                       bool and_op) {
     int array_size = ArraySize(right_array);
     // |left_val|: the value we'll "&" all of the array elements with.
     // |right_array|: the array.
@@ -510,68 +517,22 @@ public:
       Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
 
       // Assign elements.
-      CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
-      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
-    CodeGen::EndFor();
-
-    return return_array;
-  }
-  static Value* OrSingleArray(Value* left_val, Value* right_array) {
-    int array_size = ArraySize(right_array);
-    // |left_val|: the value we'll "|" all of the array elements with.
-    // |right_array|: the array.
-
-    AbstractType return_array_type = AbstractTypeFromValue(right_array);
-    assert(return_array_type == AbstractType::IntegerArray ||
-           return_array_type == AbstractType::BoolArray);
-    assert(return_array_type ==
-           ArrayTypeFromPrimitive(AbstractTypeFromValue(left_val)));
-
-    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
-    Value* return_array = CodeGen::CreateVariable(return_array_type,
-                                                  "$tmp_arr$", false, true,
-                                                  array_size);
-    CodeGen::For();
-    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
-      // Right value at index |i|.
-      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
-      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
-
-      // Assign elements.
-      CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
+      if (and_op)
+        CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
+      else
+        CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
       CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
     CodeGen::EndFor();
 
     return return_array;
   }
   static Value* AndArrays(Value* left, Value* right) {
-    int array_size = ArraySize(left);
-    assert(array_size == ArraySize(right));
-
-    AbstractType return_array_type = AbstractTypeFromValue(left);
-    assert(return_array_type == AbstractType::IntegerArray ||
-           return_array_type == AbstractType::BoolArray);
-    assert(return_array_type == AbstractTypeFromValue(right));
-
-    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
-    Value* return_array = CodeGen::CreateVariable(return_array_type,
-                                                  "$tmp_arr$", false, true,
-                                                  array_size);
-    CodeGen::For();
-    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
-      // Left & right value at index |i|.
-      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
-      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
-      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
-
-      // Assign elements.
-      CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
-      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
-    CodeGen::EndFor();
-
-    return return_array;
+    return BitwiseArraysImpl(left, right, true);
   }
   static Value* OrArrays(Value* left, Value* right) {
+    return BitwiseArraysImpl(left, right, false);
+  }
+  static Value* BitwiseArraysImpl(Value* left, Value* right, bool and_op) {
     int array_size = ArraySize(left);
     assert(array_size == ArraySize(right));
 
@@ -592,14 +553,23 @@ public:
       Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
 
       // Assign elements.
-      CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
+      if (and_op)
+        CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
+      else
+        CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));
       CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
     CodeGen::EndFor();
 
     return return_array;
   }
-  // Can accept any combinnationn of integer[] and float[] arrays.
   static Value* AddArrays(Value* left, Value* right) {
+    return AddSubtractArraysImpl(left, right, true);
+  }
+  static Value* SubtractArrays(Value* left, Value* right) {
+    return AddSubtractArraysImpl(left, right, false);
+  }
+  // Can accept any combination of integer[] and float[] arrays.
+  static Value* AddSubtractArraysImpl(Value* left, Value* right, bool add_op) {
     int array_size = ArraySize(left);
     assert(array_size == ArraySize(right));
 
@@ -634,10 +604,17 @@ public:
       Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
 
       // Assign elements.
-      if (return_array_type == AbstractType::FloatArray)
-        CodeGen::Assign(return_array_element, CodeGen::AddFloats(left_val, right_val));
-      else
-        CodeGen::Assign(return_array_element, CodeGen::AddIntegers(left_val, right_val));
+      if (return_array_type == AbstractType::FloatArray) {
+        if (add_op)
+          CodeGen::Assign(return_array_element, CodeGen::AddFloats(left_val, right_val));
+        else
+          CodeGen::Assign(return_array_element, CodeGen::SubtractFloats(left_val, right_val));
+      } else {
+        if (add_op)
+          CodeGen::Assign(return_array_element, CodeGen::AddIntegers(left_val, right_val));
+        else
+          CodeGen::Assign(return_array_element, CodeGen::SubtractIntegers(left_val, right_val));
+      }
       CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
     CodeGen::EndFor();
 

@@ -15,6 +15,7 @@
 ./referenceVar &> referenceVar.ll &&
 ./stringArg &> stringArg.ll &&
 ./string_array_by_reference &> string_array_by_reference.ll &&
+./subtract_arrays &> subtract_arrays.ll
 
 ./add_arrays.bin > add_arrays.out
 ./arrays_by_reference.bin > arrays_by_reference.out
@@ -32,4 +33,5 @@
 ./putX.bin > putX.out &&
 ./referenceVar.bin > referenceVar.out &&
 ./stringArg.bin > stringArg.out
-./string_array_by_reference.bin > string_array_by_reference.out
+./string_array_by_reference.bin > string_array_by_reference.out &&
+./subtract_arrays.bin > subtract_arrays.out
