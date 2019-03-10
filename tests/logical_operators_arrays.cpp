@@ -37,12 +37,12 @@ int main() {
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::AndArrays(CodeGen::GetVariableReference("first_int_array"),
                                                    CodeGen::GetVariableReference("second_int_array"),
-                                                   6, AbstractType::Integer)));
+                                                   AbstractType::Integer)));
   // result_bool_array = first_bool_array & second_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::AndArrays(CodeGen::GetVariableReference("first_bool_array"),
                                                    CodeGen::GetVariableReference("second_bool_array"),
-                                                   6, AbstractType::Bool)));
+                                                   AbstractType::Bool)));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
@@ -82,12 +82,12 @@ int main() {
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("first_int_array"),
                                                   CodeGen::GetVariableReference("second_int_array"),
-                                                  6, AbstractType::Integer)));
+                                                  AbstractType::Integer)));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("first_bool_array"),
                                                   CodeGen::GetVariableReference("result_bool_array"),
-                                                  6, AbstractType::Bool)));
+                                                  AbstractType::Bool)));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));

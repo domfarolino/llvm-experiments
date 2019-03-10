@@ -485,7 +485,8 @@ public:
 
   // Array operators.
   static Value* AndSingleArray(Value* left_val, Value* right_array,
-                               int array_size, AbstractType primitive_type) {
+                               AbstractType primitive_type) {
+    int array_size = ArrayLength(right_array);
     // |left_val|: the value we'll "&" all of the array elements with.
     // |right_array|: the array.
 
@@ -510,8 +511,9 @@ public:
 
     return return_array;
   }
-  static Value* OrSingleArray(Value* left_val, Value* right_array, int array_size,
-                               AbstractType primitive_type) {
+  static Value* OrSingleArray(Value* left_val, Value* right_array,
+                              AbstractType primitive_type) {
+    int array_size = ArrayLength(right_array);
     // |left_val|: the value we'll "|" all of the array elements with.
     // |right_array|: the array.
 
@@ -536,8 +538,10 @@ public:
 
     return return_array;
   }
-  static Value* AndArrays(Value* left_array, Value* right_array, int array_size,
-                          AbstractType primitive_type) {
+  static Value* AndArrays(Value* left, Value* right, AbstractType primitive_type) {
+    int array_size = ArrayLength(left);
+    // Assert: array_size == ArrayLength(right);
+
     AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
     // Assert: (return_array_type == AbstractType::IntegerArray ||
     //          return_array_type == AbstractType::BoolArray)
@@ -550,8 +554,8 @@ public:
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
       // Left & right value at index |i|.
       Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
-      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left_array, CodeGen::Load(i)));
-      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
 
       // Assign elements.
       CodeGen::Assign(return_array_element, CodeGen::And(left_val, right_val));
@@ -560,8 +564,10 @@ public:
 
     return return_array;
   }
-  static Value* OrArrays(Value* left_array, Value* right_array, int array_size,
-                          AbstractType primitive_type) {
+  static Value* OrArrays(Value* left, Value* right, AbstractType primitive_type) {
+    int array_size = ArrayLength(left);
+    // Assert: array_size == ArrayLength(right);
+
     AbstractType return_array_type = ArrayTypeFromPrimitive(primitive_type);
     // Assert: (return_array_type == AbstractType::IntegerArray ||
     //          return_array_type == AbstractType::BoolArray)
@@ -574,8 +580,8 @@ public:
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
       // Left & right value at index |i|.
       Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
-      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left_array, CodeGen::Load(i)));
-      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right_array, CodeGen::Load(i)));
+      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
+      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
 
       // Assign elements.
       CodeGen::Assign(return_array_element, CodeGen::Or(left_val, right_val));

@@ -31,12 +31,12 @@ int main() {
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::AndSingleArray(CodeGen::ProduceInteger(2),
                                                         CodeGen::GetVariableReference("result_int_array"),
-                                                        6, AbstractType::Integer)));
+                                                        AbstractType::Integer)));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::AndSingleArray(CodeGen::ProduceBool(false),
                                                         CodeGen::GetVariableReference("result_bool_array"),
-                                                        6, AbstractType::Bool)));
+                                                        AbstractType::Bool)));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
@@ -77,12 +77,12 @@ int main() {
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
                   CodeGen::Load(CodeGen::OrSingleArray(CodeGen::ProduceInteger(2),
                                                         CodeGen::GetVariableReference("result_int_array"),
-                                                        6, AbstractType::Integer)));
+                                                        AbstractType::Integer)));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
                   CodeGen::Load(CodeGen::OrSingleArray(CodeGen::ProduceBool(false),
                                                         CodeGen::GetVariableReference("result_bool_array"),
-                                                        6, AbstractType::Bool)));
+                                                        AbstractType::Bool)));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
