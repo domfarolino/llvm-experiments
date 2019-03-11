@@ -197,17 +197,17 @@ loop12:                                           ; preds = %condeval10
   br label %condeval10
 
 postloop22:                                       ; preds = %condeval10
-  %array-index23 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %8 = load double, double* %array-index23
+  %array-index23 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
+  %8 = load i32, i32* %array-index23
   %array-index24 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
+  %9 = load double, double* %array-index24
   %array-index25 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %9 = load i32, i32* %array-index25
+  %10 = load i32, i32* %array-index25
   %array-index26 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %10 = load double, double* %array-index26
+  %11 = load double, double* %array-index26
   %array-index27 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %11 = load i32, i32* %array-index27
-  %array-index28 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %12 = load double, double* %array-index28
+  %12 = load i32, i32* %array-index27
+  %array-index28 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
   %array-index29 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
   %13 = load i32, i32* %array-index29
   %array-index30 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
@@ -260,17 +260,17 @@ loop39:                                           ; preds = %condeval38
 postloop43:                                       ; preds = %condeval38
   %31 = load [6 x double], [6 x double]* %"$tmp_arr$37"
   store [6 x double] %31, [6 x double]* %final_float_array
-  %array-index44 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
+  %array-index44 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
   %32 = load i32, i32* %array-index44
   %array-index45 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
+  %33 = load i32, i32* %array-index45
   %array-index46 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
-  %33 = load i32, i32* %array-index46
+  %34 = load i32, i32* %array-index46
   %array-index47 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %34 = load i32, i32* %array-index47
+  %35 = load i32, i32* %array-index47
   %array-index48 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
-  %35 = load i32, i32* %array-index48
-  %array-index49 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %36 = load i32, i32* %array-index49
+  %36 = load i32, i32* %array-index48
+  %array-index49 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
   store i32 0, i32* %"$i$50"
   br label %condeval52
 
@@ -298,17 +298,17 @@ loop53:                                           ; preds = %condeval52
 postloop57:                                       ; preds = %condeval52
   %47 = load [6 x i32], [6 x i32]* %"$tmp_arr$51"
   store [6 x i32] %47, [6 x i32]* %first_int_array
-  %array-index58 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
+  %array-index58 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
   %48 = load i32, i32* %array-index58
   %array-index59 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
+  %49 = load i32, i32* %array-index59
   %array-index60 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
-  %49 = load i32, i32* %array-index60
+  %50 = load i32, i32* %array-index60
   %array-index61 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %50 = load i32, i32* %array-index61
+  %51 = load i32, i32* %array-index61
   %array-index62 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
-  %51 = load i32, i32* %array-index62
-  %array-index63 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 0
-  %52 = load i32, i32* %array-index63
+  %52 = load i32, i32* %array-index62
+  %array-index63 = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 0
   store i32 0, i32* %"$i$64"
   br label %condeval66
 
@@ -336,17 +336,17 @@ loop67:                                           ; preds = %condeval66
 postloop71:                                       ; preds = %condeval66
   %63 = load [6 x i32], [6 x i32]* %"$tmp_arr$65"
   store [6 x i32] %63, [6 x i32]* %first_int_array
-  %array-index72 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
+  %array-index72 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
   %64 = load double, double* %array-index72
   %array-index73 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
+  %65 = load double, double* %array-index73
   %array-index74 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
-  %65 = load double, double* %array-index74
+  %66 = load double, double* %array-index74
   %array-index75 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %66 = load double, double* %array-index75
+  %67 = load double, double* %array-index75
   %array-index76 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
-  %67 = load double, double* %array-index76
-  %array-index77 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %68 = load double, double* %array-index77
+  %68 = load double, double* %array-index76
+  %array-index77 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
   store i32 0, i32* %"$i$78"
   br label %condeval80
 
@@ -374,17 +374,17 @@ loop81:                                           ; preds = %condeval80
 postloop85:                                       ; preds = %condeval80
   %79 = load [6 x double], [6 x double]* %"$tmp_arr$79"
   store [6 x double] %79, [6 x double]* %first_float_array
-  %array-index86 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
+  %array-index86 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
   %80 = load double, double* %array-index86
   %array-index87 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
+  %81 = load double, double* %array-index87
   %array-index88 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
-  %81 = load double, double* %array-index88
+  %82 = load double, double* %array-index88
   %array-index89 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %82 = load double, double* %array-index89
+  %83 = load double, double* %array-index89
   %array-index90 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
-  %83 = load double, double* %array-index90
-  %array-index91 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 0
-  %84 = load double, double* %array-index91
+  %84 = load double, double* %array-index90
+  %array-index91 = getelementptr [6 x double], [6 x double]* %first_float_array, i64 0, i32 0
   store i32 0, i32* %"$i$92"
   br label %condeval94
 
