@@ -29,18 +29,18 @@ int main() {
 
   // result_int_array = 2 & result_int_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
-                  CodeGen::Load(CodeGen::AndSingleArray(CodeGen::ProduceInteger(2),
+                  CodeGen::Load(CodeGen::AndArrays(CodeGen::ProduceInteger(2),
                                                         CodeGen::GetVariableReference("result_int_array"))));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
-                  CodeGen::Load(CodeGen::AndSingleArray(CodeGen::ProduceBool(false),
+                  CodeGen::Load(CodeGen::AndArrays(CodeGen::ProduceBool(false),
                                                         CodeGen::GetVariableReference("result_bool_array"))));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
   // Print all array elements.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_int_array| after |AndSingleArray()|:") });
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_int_array| after |AndArrays()|:") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("result_int_array"), CodeGen::GetVariable("i")))   });
@@ -51,7 +51,7 @@ int main() {
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
   // Print all array elements.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_bool_array| after |AndSingleArray()|:") });
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_bool_array| after |AndArrays()|:") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putBool", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("result_bool_array"), CodeGen::GetVariable("i")))   });
@@ -65,26 +65,24 @@ int main() {
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     // Assign elements.
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("result_int_array"), CodeGen::GetVariable("i")), CodeGen::Load(CodeGen::GetVariableReference("i")));
-
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("result_bool_array"), CodeGen::GetVariable("i")), CodeGen::ProduceBool(true));
-
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
 
   // result_int_array = 2 & result_int_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_int_array"),
-                  CodeGen::Load(CodeGen::OrSingleArray(CodeGen::ProduceInteger(2),
-                                                        CodeGen::GetVariableReference("result_int_array"))));
+                  CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("result_int_array"),
+                                                  CodeGen::ProduceInteger(2))));
   // result_bool_array = true & result_bool_array;
   CodeGen::Assign(CodeGen::GetVariableReference("result_bool_array"),
-                  CodeGen::Load(CodeGen::OrSingleArray(CodeGen::ProduceBool(false),
-                                                        CodeGen::GetVariableReference("result_bool_array"))));
+                  CodeGen::Load(CodeGen::OrArrays(CodeGen::GetVariableReference("result_bool_array"),
+                                                  CodeGen::ProduceBool(false))));
 
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
   // Print all array elements.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_int_array| after |OrSingleArray()|:") });
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_int_array| after |OrArrays()|:") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("result_int_array"), CodeGen::GetVariable("i")))   });
@@ -95,7 +93,7 @@ int main() {
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
   // Print all array elements.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_bool_array| after |OrSingleArray()|:") });
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing |result_bool_array| after |OrArrays()|:") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putBool", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("result_bool_array"), CodeGen::GetVariable("i")))   });

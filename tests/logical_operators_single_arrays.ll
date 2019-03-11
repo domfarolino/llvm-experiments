@@ -11,10 +11,10 @@ source_filename = "Dom Sample"
 @7 = private unnamed_addr constant [3 x i8] c"%d\00"
 @8 = private unnamed_addr constant [4 x i8] c" %c\00"
 @9 = private unnamed_addr constant [3 x i8] c"%s\00"
-@10 = private unnamed_addr constant [54 x i8] c"Printing |result_int_array| after |AndSingleArray()|:\00"
-@11 = private unnamed_addr constant [55 x i8] c"Printing |result_bool_array| after |AndSingleArray()|:\00"
-@12 = private unnamed_addr constant [53 x i8] c"Printing |result_int_array| after |OrSingleArray()|:\00"
-@13 = private unnamed_addr constant [54 x i8] c"Printing |result_bool_array| after |OrSingleArray()|:\00"
+@10 = private unnamed_addr constant [49 x i8] c"Printing |result_int_array| after |AndArrays()|:\00"
+@11 = private unnamed_addr constant [50 x i8] c"Printing |result_bool_array| after |AndArrays()|:\00"
+@12 = private unnamed_addr constant [48 x i8] c"Printing |result_int_array| after |OrArrays()|:\00"
+@13 = private unnamed_addr constant [49 x i8] c"Printing |result_bool_array| after |OrArrays()|:\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -119,13 +119,13 @@ entry:
 
 define i32 @main() {
 entry:
-  %"$tmp_arr$62" = alloca [6 x i1]
-  %"$i$61" = alloca i32
-  %"$tmp_arr$52" = alloca [6 x i32]
-  %"$i$51" = alloca i32
-  %i38 = alloca i32
-  %"$tmp_arr$18" = alloca [6 x i1]
-  %"$i$17" = alloca i32
+  %"$tmp_arr$66" = alloca [6 x i1]
+  %"$i$65" = alloca i32
+  %"$tmp_arr$55" = alloca [6 x i32]
+  %"$i$54" = alloca i32
+  %i40 = alloca i32
+  %"$tmp_arr$20" = alloca [6 x i1]
+  %"$i$19" = alloca i32
   %"$tmp_arr$" = alloca [6 x i32]
   %"$i$" = alloca i32
   %i = alloca i32
@@ -156,220 +156,227 @@ postloop:                                         ; preds = %condeval
   %array-index6 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
   %3 = load i32, i32* %array-index6
   %array-index7 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
+  %4 = load i32, i32* %array-index7
   %array-index8 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
-  %4 = load i32, i32* %array-index8
+  %5 = load i32, i32* %array-index8
+  %array-index9 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
   store i32 0, i32* %"$i$"
-  br label %condeval9
+  br label %condeval10
 
-condeval9:                                        ; preds = %loop10, %postloop
-  %5 = load i32, i32* %"$i$"
-  %6 = icmp slt i32 %5, 6
-  br i1 %6, label %loop10, label %postloop13
+condeval10:                                       ; preds = %loop11, %postloop
+  %6 = load i32, i32* %"$i$"
+  %7 = icmp slt i32 %6, 6
+  br i1 %7, label %loop11, label %postloop14
 
-loop10:                                           ; preds = %condeval9
-  %7 = load i32, i32* %"$i$"
-  %array-index11 = getelementptr [6 x i32], [6 x i32]* %"$tmp_arr$", i64 0, i32 %7
+loop11:                                           ; preds = %condeval10
   %8 = load i32, i32* %"$i$"
-  %array-index12 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %8
-  %9 = load i32, i32* %array-index12
-  %10 = and i32 2, %9
-  store i32 %10, i32* %array-index11
-  %11 = load i32, i32* %"$i$"
-  %12 = add i32 %11, 1
-  store i32 %12, i32* %"$i$"
-  br label %condeval9
+  %array-index12 = getelementptr [6 x i32], [6 x i32]* %"$tmp_arr$", i64 0, i32 %8
+  %9 = load i32, i32* %"$i$"
+  %array-index13 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %9
+  %10 = load i32, i32* %array-index13
+  %11 = and i32 2, %10
+  store i32 %11, i32* %array-index12
+  %12 = load i32, i32* %"$i$"
+  %13 = add i32 %12, 1
+  store i32 %13, i32* %"$i$"
+  br label %condeval10
 
-postloop13:                                       ; preds = %condeval9
-  %13 = load [6 x i32], [6 x i32]* %"$tmp_arr$"
-  store [6 x i32] %13, [6 x i32]* %result_int_array
-  %array-index14 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
-  %14 = load i1, i1* %array-index14
+postloop14:                                       ; preds = %condeval10
+  %14 = load [6 x i32], [6 x i32]* %"$tmp_arr$"
+  store [6 x i32] %14, [6 x i32]* %result_int_array
   %array-index15 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  %15 = load i1, i1* %array-index15
   %array-index16 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
-  %15 = load i1, i1* %array-index16
-  store i32 0, i32* %"$i$17"
-  br label %condeval19
+  %16 = load i1, i1* %array-index16
+  %array-index17 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  %17 = load i1, i1* %array-index17
+  %array-index18 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  store i32 0, i32* %"$i$19"
+  br label %condeval21
 
-condeval19:                                       ; preds = %loop20, %postloop13
-  %16 = load i32, i32* %"$i$17"
-  %17 = icmp slt i32 %16, 6
-  br i1 %17, label %loop20, label %postloop23
+condeval21:                                       ; preds = %loop22, %postloop14
+  %18 = load i32, i32* %"$i$19"
+  %19 = icmp slt i32 %18, 6
+  br i1 %19, label %loop22, label %postloop25
 
-loop20:                                           ; preds = %condeval19
-  %18 = load i32, i32* %"$i$17"
-  %array-index21 = getelementptr [6 x i1], [6 x i1]* %"$tmp_arr$18", i64 0, i32 %18
-  %19 = load i32, i32* %"$i$17"
-  %array-index22 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %19
-  %20 = load i1, i1* %array-index22
-  %21 = and i1 false, %20
-  store i1 %21, i1* %array-index21
-  %22 = load i32, i32* %"$i$17"
-  %23 = add i32 %22, 1
-  store i32 %23, i32* %"$i$17"
-  br label %condeval19
+loop22:                                           ; preds = %condeval21
+  %20 = load i32, i32* %"$i$19"
+  %array-index23 = getelementptr [6 x i1], [6 x i1]* %"$tmp_arr$20", i64 0, i32 %20
+  %21 = load i32, i32* %"$i$19"
+  %array-index24 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %21
+  %22 = load i1, i1* %array-index24
+  %23 = and i1 false, %22
+  store i1 %23, i1* %array-index23
+  %24 = load i32, i32* %"$i$19"
+  %25 = add i32 %24, 1
+  store i32 %25, i32* %"$i$19"
+  br label %condeval21
 
-postloop23:                                       ; preds = %condeval19
-  %24 = load [6 x i1], [6 x i1]* %"$tmp_arr$18"
-  store [6 x i1] %24, [6 x i1]* %result_bool_array
+postloop25:                                       ; preds = %condeval21
+  %26 = load [6 x i1], [6 x i1]* %"$tmp_arr$20"
+  store [6 x i1] %26, [6 x i1]* %result_bool_array
   store i32 0, i32* %i
-  call void @putString(i8* getelementptr inbounds ([54 x i8], [54 x i8]* @10, i32 0, i32 0))
-  br label %condeval24
+  call void @putString(i8* getelementptr inbounds ([49 x i8], [49 x i8]* @10, i32 0, i32 0))
+  br label %condeval26
 
-condeval24:                                       ; preds = %loop26, %postloop23
-  %i25 = load i32, i32* %i
-  %25 = icmp slt i32 %i25, 6
-  br i1 %25, label %loop26, label %postloop30
-
-loop26:                                           ; preds = %condeval24
+condeval26:                                       ; preds = %loop28, %postloop25
   %i27 = load i32, i32* %i
-  %array-index28 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i27
-  %26 = load i32, i32* %array-index28
-  call void @putInteger(i32 %26)
+  %27 = icmp slt i32 %i27, 6
+  br i1 %27, label %loop28, label %postloop32
+
+loop28:                                           ; preds = %condeval26
   %i29 = load i32, i32* %i
-  %27 = add i32 %i29, 1
-  store i32 %27, i32* %i
-  br label %condeval24
+  %array-index30 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i29
+  %28 = load i32, i32* %array-index30
+  call void @putInteger(i32 %28)
+  %i31 = load i32, i32* %i
+  %29 = add i32 %i31, 1
+  store i32 %29, i32* %i
+  br label %condeval26
 
-postloop30:                                       ; preds = %condeval24
+postloop32:                                       ; preds = %condeval26
   store i32 0, i32* %i
-  call void @putString(i8* getelementptr inbounds ([55 x i8], [55 x i8]* @11, i32 0, i32 0))
-  br label %condeval31
+  call void @putString(i8* getelementptr inbounds ([50 x i8], [50 x i8]* @11, i32 0, i32 0))
+  br label %condeval33
 
-condeval31:                                       ; preds = %loop33, %postloop30
-  %i32 = load i32, i32* %i
-  %28 = icmp slt i32 %i32, 6
-  br i1 %28, label %loop33, label %postloop37
-
-loop33:                                           ; preds = %condeval31
+condeval33:                                       ; preds = %loop35, %postloop32
   %i34 = load i32, i32* %i
-  %array-index35 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i34
-  %29 = load i1, i1* %array-index35
-  call void @putBool(i1 %29)
+  %30 = icmp slt i32 %i34, 6
+  br i1 %30, label %loop35, label %postloop39
+
+loop35:                                           ; preds = %condeval33
   %i36 = load i32, i32* %i
-  %30 = add i32 %i36, 1
-  store i32 %30, i32* %i
-  br label %condeval31
+  %array-index37 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i36
+  %31 = load i1, i1* %array-index37
+  call void @putBool(i1 %31)
+  %i38 = load i32, i32* %i
+  %32 = add i32 %i38, 1
+  store i32 %32, i32* %i
+  br label %condeval33
 
-postloop37:                                       ; preds = %condeval31
-  store i32 0, i32* %i38
-  br label %condeval39
+postloop39:                                       ; preds = %condeval33
+  store i32 0, i32* %i40
+  br label %condeval41
 
-condeval39:                                       ; preds = %loop41, %postloop37
-  %i40 = load i32, i32* %i38
-  %31 = icmp slt i32 %i40, 6
-  br i1 %31, label %loop41, label %postloop47
+condeval41:                                       ; preds = %loop43, %postloop39
+  %i42 = load i32, i32* %i40
+  %33 = icmp slt i32 %i42, 6
+  br i1 %33, label %loop43, label %postloop49
 
-loop41:                                           ; preds = %condeval39
-  %i42 = load i32, i32* %i38
-  %array-index43 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i42
-  %32 = load i32, i32* %i38
-  store i32 %32, i32* %array-index43
-  %i44 = load i32, i32* %i38
-  %array-index45 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i44
-  store i1 true, i1* %array-index45
-  %i46 = load i32, i32* %i38
-  %33 = add i32 %i46, 1
-  store i32 %33, i32* %i38
-  br label %condeval39
+loop43:                                           ; preds = %condeval41
+  %i44 = load i32, i32* %i40
+  %array-index45 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i44
+  %34 = load i32, i32* %i40
+  store i32 %34, i32* %array-index45
+  %i46 = load i32, i32* %i40
+  %array-index47 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i46
+  store i1 true, i1* %array-index47
+  %i48 = load i32, i32* %i40
+  %35 = add i32 %i48, 1
+  store i32 %35, i32* %i40
+  br label %condeval41
 
-postloop47:                                       ; preds = %condeval39
-  %array-index48 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
-  %34 = load i32, i32* %array-index48
-  %array-index49 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
+postloop49:                                       ; preds = %condeval41
   %array-index50 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
-  %35 = load i32, i32* %array-index50
-  store i32 0, i32* %"$i$51"
-  br label %condeval53
+  %36 = load i32, i32* %array-index50
+  %array-index51 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
+  %37 = load i32, i32* %array-index51
+  %array-index52 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
+  %38 = load i32, i32* %array-index52
+  %array-index53 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 0
+  store i32 0, i32* %"$i$54"
+  br label %condeval56
 
-condeval53:                                       ; preds = %loop54, %postloop47
-  %36 = load i32, i32* %"$i$51"
-  %37 = icmp slt i32 %36, 6
-  br i1 %37, label %loop54, label %postloop57
+condeval56:                                       ; preds = %loop57, %postloop49
+  %39 = load i32, i32* %"$i$54"
+  %40 = icmp slt i32 %39, 6
+  br i1 %40, label %loop57, label %postloop60
 
-loop54:                                           ; preds = %condeval53
-  %38 = load i32, i32* %"$i$51"
-  %array-index55 = getelementptr [6 x i32], [6 x i32]* %"$tmp_arr$52", i64 0, i32 %38
-  %39 = load i32, i32* %"$i$51"
-  %array-index56 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %39
-  %40 = load i32, i32* %array-index56
-  %41 = or i32 2, %40
-  store i32 %41, i32* %array-index55
-  %42 = load i32, i32* %"$i$51"
-  %43 = add i32 %42, 1
-  store i32 %43, i32* %"$i$51"
-  br label %condeval53
+loop57:                                           ; preds = %condeval56
+  %41 = load i32, i32* %"$i$54"
+  %array-index58 = getelementptr [6 x i32], [6 x i32]* %"$tmp_arr$55", i64 0, i32 %41
+  %42 = load i32, i32* %"$i$54"
+  %array-index59 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %42
+  %43 = load i32, i32* %array-index59
+  %44 = or i32 %43, 2
+  store i32 %44, i32* %array-index58
+  %45 = load i32, i32* %"$i$54"
+  %46 = add i32 %45, 1
+  store i32 %46, i32* %"$i$54"
+  br label %condeval56
 
-postloop57:                                       ; preds = %condeval53
-  %44 = load [6 x i32], [6 x i32]* %"$tmp_arr$52"
-  store [6 x i32] %44, [6 x i32]* %result_int_array
-  %array-index58 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
-  %45 = load i1, i1* %array-index58
-  %array-index59 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
-  %array-index60 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
-  %46 = load i1, i1* %array-index60
-  store i32 0, i32* %"$i$61"
-  br label %condeval63
+postloop60:                                       ; preds = %condeval56
+  %47 = load [6 x i32], [6 x i32]* %"$tmp_arr$55"
+  store [6 x i32] %47, [6 x i32]* %result_int_array
+  %array-index61 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  %48 = load i1, i1* %array-index61
+  %array-index62 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  %49 = load i1, i1* %array-index62
+  %array-index63 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  %50 = load i1, i1* %array-index63
+  %array-index64 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 0
+  store i32 0, i32* %"$i$65"
+  br label %condeval67
 
-condeval63:                                       ; preds = %loop64, %postloop57
-  %47 = load i32, i32* %"$i$61"
-  %48 = icmp slt i32 %47, 6
-  br i1 %48, label %loop64, label %postloop67
+condeval67:                                       ; preds = %loop68, %postloop60
+  %51 = load i32, i32* %"$i$65"
+  %52 = icmp slt i32 %51, 6
+  br i1 %52, label %loop68, label %postloop71
 
-loop64:                                           ; preds = %condeval63
-  %49 = load i32, i32* %"$i$61"
-  %array-index65 = getelementptr [6 x i1], [6 x i1]* %"$tmp_arr$62", i64 0, i32 %49
-  %50 = load i32, i32* %"$i$61"
-  %array-index66 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %50
-  %51 = load i1, i1* %array-index66
-  %52 = or i1 false, %51
-  store i1 %52, i1* %array-index65
-  %53 = load i32, i32* %"$i$61"
-  %54 = add i32 %53, 1
-  store i32 %54, i32* %"$i$61"
-  br label %condeval63
+loop68:                                           ; preds = %condeval67
+  %53 = load i32, i32* %"$i$65"
+  %array-index69 = getelementptr [6 x i1], [6 x i1]* %"$tmp_arr$66", i64 0, i32 %53
+  %54 = load i32, i32* %"$i$65"
+  %array-index70 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %54
+  %55 = load i1, i1* %array-index70
+  store i1 %55, i1* %array-index69
+  %56 = load i32, i32* %"$i$65"
+  %57 = add i32 %56, 1
+  store i32 %57, i32* %"$i$65"
+  br label %condeval67
 
-postloop67:                                       ; preds = %condeval63
-  %55 = load [6 x i1], [6 x i1]* %"$tmp_arr$62"
-  store [6 x i1] %55, [6 x i1]* %result_bool_array
-  store i32 0, i32* %i38
-  call void @putString(i8* getelementptr inbounds ([53 x i8], [53 x i8]* @12, i32 0, i32 0))
-  br label %condeval68
+postloop71:                                       ; preds = %condeval67
+  %58 = load [6 x i1], [6 x i1]* %"$tmp_arr$66"
+  store [6 x i1] %58, [6 x i1]* %result_bool_array
+  store i32 0, i32* %i40
+  call void @putString(i8* getelementptr inbounds ([48 x i8], [48 x i8]* @12, i32 0, i32 0))
+  br label %condeval72
 
-condeval68:                                       ; preds = %loop70, %postloop67
-  %i69 = load i32, i32* %i38
-  %56 = icmp slt i32 %i69, 6
-  br i1 %56, label %loop70, label %postloop74
+condeval72:                                       ; preds = %loop74, %postloop71
+  %i73 = load i32, i32* %i40
+  %59 = icmp slt i32 %i73, 6
+  br i1 %59, label %loop74, label %postloop78
 
-loop70:                                           ; preds = %condeval68
-  %i71 = load i32, i32* %i38
-  %array-index72 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i71
-  %57 = load i32, i32* %array-index72
-  call void @putInteger(i32 %57)
-  %i73 = load i32, i32* %i38
-  %58 = add i32 %i73, 1
-  store i32 %58, i32* %i38
-  br label %condeval68
+loop74:                                           ; preds = %condeval72
+  %i75 = load i32, i32* %i40
+  %array-index76 = getelementptr [6 x i32], [6 x i32]* %result_int_array, i64 0, i32 %i75
+  %60 = load i32, i32* %array-index76
+  call void @putInteger(i32 %60)
+  %i77 = load i32, i32* %i40
+  %61 = add i32 %i77, 1
+  store i32 %61, i32* %i40
+  br label %condeval72
 
-postloop74:                                       ; preds = %condeval68
-  store i32 0, i32* %i38
-  call void @putString(i8* getelementptr inbounds ([54 x i8], [54 x i8]* @13, i32 0, i32 0))
-  br label %condeval75
+postloop78:                                       ; preds = %condeval72
+  store i32 0, i32* %i40
+  call void @putString(i8* getelementptr inbounds ([49 x i8], [49 x i8]* @13, i32 0, i32 0))
+  br label %condeval79
 
-condeval75:                                       ; preds = %loop77, %postloop74
-  %i76 = load i32, i32* %i38
-  %59 = icmp slt i32 %i76, 6
-  br i1 %59, label %loop77, label %postloop81
+condeval79:                                       ; preds = %loop81, %postloop78
+  %i80 = load i32, i32* %i40
+  %62 = icmp slt i32 %i80, 6
+  br i1 %62, label %loop81, label %postloop85
 
-loop77:                                           ; preds = %condeval75
-  %i78 = load i32, i32* %i38
-  %array-index79 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i78
-  %60 = load i1, i1* %array-index79
-  call void @putBool(i1 %60)
-  %i80 = load i32, i32* %i38
-  %61 = add i32 %i80, 1
-  store i32 %61, i32* %i38
-  br label %condeval75
+loop81:                                           ; preds = %condeval79
+  %i82 = load i32, i32* %i40
+  %array-index83 = getelementptr [6 x i1], [6 x i1]* %result_bool_array, i64 0, i32 %i82
+  %63 = load i1, i1* %array-index83
+  call void @putBool(i1 %63)
+  %i84 = load i32, i32* %i40
+  %64 = add i32 %i84, 1
+  store i32 %64, i32* %i40
+  br label %condeval79
 
-postloop81:                                       ; preds = %condeval75
+postloop85:                                       ; preds = %condeval79
   ret i32 0
 }
