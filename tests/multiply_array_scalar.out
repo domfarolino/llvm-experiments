@@ -1,0 +1,46 @@
+Top-level assigning array element
+Top-level assigning array element
+Top-level assigning array element
+Top-level assigning array element
+Top-level assigning array element
+Top-level assigning array element
+Top-level printing given array values
+0
+0.000000
+1
+1.000000
+2
+2.000000
+3
+3.000000
+4
+4.000000
+5
+5.000000
+Printing the first and second integer and float arrays
+0
+0.000000
+10
+10.000000
+20
+20.000000
+30
+30.000000
+40
+40.000000
+50
+50.000000
+Printing final_float_array (aka integer * float[])
+0.000000
+4.000000
+8.000000
+12.000000
+16.000000
+20.000000
+Printing final_float_array (aka integer[] * float)
+0.000000
+40.000000
+80.000000
+120.000000
+160.000000
+200.000000

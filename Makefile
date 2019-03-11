@@ -71,5 +71,8 @@ subtract_array_scalar: tests/subtract_array_scalar.cpp
 multiply_arrays: tests/multiply_arrays.cpp
 	$(CXX) $^ -o tests/$@ $(CFLAGS)
 
+multiply_array_scalar: tests/multiply_array_scalar.cpp
+	$(CXX) $^ -o tests/$@ $(CFLAGS)
+
 clean:
 	rm -r $(PROGRAMS)
