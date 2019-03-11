@@ -622,6 +622,87 @@ public:
 
     return return_array;
   }
+  // The below two methods are used for multiplying or dividing any combination
+  // of integers, floats, integer[]s, and float[]s, with the caveat that one of
+  // the arguments must be an array.
+  static Value* MultiplyArrays(Value* left, Value* right) {
+    return MultiplyDivideArrayComboImpl(left, right, true);
+  }
+  static Value* DivideArrays(Value* left, Value* right) {
+    return MultiplyDivideArrayComboImpl(left, right, false);
+  }
+  static Value* MultiplyDivideArrayComboImpl(Value* left, Value* right,
+                                             bool mult_op) {
+    // |left| and |right|: Either a constant integer or float, or an array of
+    // integers or floats.
+
+    // TODO(domfarolino): Get some asserts on this.
+    bool left_is_array = IsArrayType(AbstractTypeFromValue(left)),
+         right_is_array = IsArrayType(AbstractTypeFromValue(right));
+
+    Type *left_primitive_type = (left_is_array) ? ArrayInnerType(left):
+                                                  left->getType(),
+         *right_primitive_type = (right_is_array) ? ArrayInnerType(right):
+                                                    right->getType();
+
+    int array_size = (left_is_array) ? ArraySize(left): ArraySize(right);
+
+    // Integer unless discovered otherwise.
+    AbstractType return_array_type = AbstractType::IntegerArray;
+
+    // Type checking & casting.
+    if (left_primitive_type->isDoubleTy() &&
+        !right_primitive_type->isDoubleTy()) {
+      // Promoting |right| to float.
+      if (right_is_array)
+        right = CastIntegerArrayToFloatArray(right);
+      else
+        right = CastIntegerToFloat(right);
+      return_array_type = AbstractType::FloatArray;
+    } else if (right_primitive_type->isDoubleTy() &&
+               !left_primitive_type->isDoubleTy()) {
+      // Promoting |left| to float.
+      if (left_is_array)
+        left = CastIntegerArrayToFloatArray(left);
+      else
+        left = CastIntegerToFloat(left);
+      return_array_type = AbstractType::FloatArray;
+    } else if (left_primitive_type->isDoubleTy() &&
+               right_primitive_type->isDoubleTy()) {
+      // Both are floats, promoting nothing.
+      return_array_type = AbstractType::FloatArray;
+    }
+
+    Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
+    CodeGen::For();
+    CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
+      // Right value at index |i|.
+      Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
+      Value* left_val = (left_is_array) ? CodeGen::Load(CodeGen::IndexArray(left,
+                                          CodeGen::Load(i))): left;
+      Value* right_val = (right_is_array) ? CodeGen::Load(CodeGen::IndexArray(right,
+                                          CodeGen::Load(i))): right;
+
+      // Assign elements.
+      if (return_array_type == AbstractType::FloatArray) {
+        if (mult_op)
+          CodeGen::Assign(return_array_element, CodeGen::MultiplyFloats(left_val, right_val));
+        else
+          CodeGen::Assign(return_array_element, CodeGen::DivideFloats(left_val, right_val));
+      } else {
+        if (mult_op)
+          CodeGen::Assign(return_array_element, CodeGen::MultiplyIntegers(left_val, right_val));
+        else
+          CodeGen::Assign(return_array_element, CodeGen::DivideIntegers(left_val, right_val));
+      }
+      CodeGen::Assign(i, CodeGen::AddIntegers(CodeGen::Load(i), ProduceInteger(1)));
+    CodeGen::EndFor();
+
+    return return_array;
+  }
 ////////////////////////// Begin Variable Management //////////////////////////
 
   // 🛑 [WARNING] 🛑 : These methods should only be used for testing ////////////

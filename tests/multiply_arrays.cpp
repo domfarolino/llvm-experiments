@@ -24,11 +24,11 @@ int main() {
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     // Assign elements.
-    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(2));
-    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("second_int_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(3));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("second_int_array"), CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
 
-    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_float_array"), CodeGen::GetVariable("i")), CodeGen::ProduceFloat(1.8));
-    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("second_float_array"), CodeGen::GetVariable("i")), CodeGen::ProduceFloat(3.4));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_float_array"), CodeGen::GetVariable("i")), CodeGen::CastIntegerToFloat(CodeGen::GetVariable("i")));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("second_float_array"), CodeGen::GetVariable("i")), CodeGen::CastIntegerToFloat(CodeGen::GetVariable("i")));
 
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
@@ -50,27 +50,27 @@ int main() {
 
   // This top assignment is |integer[] + float[]|.
   CodeGen::Assign(CodeGen::GetVariableReference("final_float_array"),
-                  CodeGen::Load(CodeGen::AddArrays(
+                  CodeGen::Load(CodeGen::MultiplyArrays(
                     CodeGen::GetVariableReference("second_int_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::Load(CodeGen::AddArrays(
+                  CodeGen::Load(CodeGen::MultiplyArrays(
                     CodeGen::GetVariableReference("first_int_array"),
                     CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::Load(CodeGen::AddArrays(
+                  CodeGen::Load(CodeGen::MultiplyArrays(
                     CodeGen::GetVariableReference("first_int_array"),
                     CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::Load(CodeGen::AddArrays(
+                  CodeGen::Load(CodeGen::MultiplyArrays(
                     CodeGen::GetVariableReference("first_float_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::Load(CodeGen::AddArrays(
+                  CodeGen::Load(CodeGen::MultiplyArrays(
                     CodeGen::GetVariableReference("first_float_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
@@ -79,7 +79,7 @@ int main() {
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
   // Print all array elements.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing the first and second integer and float arrays") });
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing the first and second integer andn float arrays") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putInteger", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")))   });
@@ -106,6 +106,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode("add_arrays");
+  CodeGen::PrintBitCode("multiply_arrays");
   return 0;
 }

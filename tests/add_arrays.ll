@@ -13,7 +13,7 @@ source_filename = "Dom Sample"
 @9 = private unnamed_addr constant [3 x i8] c"%s\00"
 @10 = private unnamed_addr constant [34 x i8] c"Top-level assigning array element\00"
 @11 = private unnamed_addr constant [38 x i8] c"Top-level printing given array values\00"
-@12 = private unnamed_addr constant [56 x i8] c"Printing the first and second integer andn float arrays\00"
+@12 = private unnamed_addr constant [55 x i8] c"Printing the first and second integer and float arrays\00"
 @13 = private unnamed_addr constant [53 x i8] c"Printing final_float_array (aka integer[] + float[])\00"
 
 declare i32 @printf(i8*, ...)
@@ -138,6 +138,7 @@ entry:
   %second_int_array = alloca [6 x i32]
   %first_int_array = alloca [6 x i32]
   store i32 0, i32* %i
+  call void @putString(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @10, i32 0, i32 0))
   br label %condeval
 
 condeval:                                         ; preds = %loop, %entry
@@ -146,7 +147,6 @@ condeval:                                         ; preds = %loop, %entry
   br i1 %0, label %loop, label %postloop
 
 loop:                                             ; preds = %condeval
-  call void @putString(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @10, i32 0, i32 0))
   %i2 = load i32, i32* %i
   %array-index = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 %i2
   store i32 2, i32* %array-index
@@ -413,7 +413,7 @@ postloop99:                                       ; preds = %condeval94
   %95 = load [6 x double], [6 x double]* %"$tmp_arr$93"
   store [6 x double] %95, [6 x double]* %first_float_array
   store i32 0, i32* %i
-  call void @putString(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @12, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([55 x i8], [55 x i8]* @12, i32 0, i32 0))
   br label %condeval100
 
 condeval100:                                      ; preds = %loop102, %postloop99
