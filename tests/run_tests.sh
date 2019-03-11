@@ -4,6 +4,7 @@
 ./arrays_by_value &> arrays_by_value.ll &&
 ./bitwise &> bitwise.ll &&
 ./boolTo &> boolTo.ll &&
+./divide_arrays &> divide_arrays.ll &&
 ./getX &> getX.ll &&
 ./globalVariable &> globalVariable.ll &&
 ./integer_array_to_float &> integer_array_to_float.ll &&
@@ -27,6 +28,7 @@
 ./arrays_by_value.bin > arrays_by_value.out &&
 ./bitwise.bin > bitwise.out &&
 ./boolTo.bin > boolTo.out &&
+./divide_arrays.bin > divide_arrays.out&&
 ./getX &> getX.ll &&
 ./globalVariable.bin > globalVariable.out &&
 ./integer_array_to_float.bin &> integer_array_to_float.out &&

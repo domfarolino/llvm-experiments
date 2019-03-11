@@ -14,7 +14,7 @@ source_filename = "Dom Sample"
 @10 = private unnamed_addr constant [34 x i8] c"Top-level assigning array element\00"
 @11 = private unnamed_addr constant [38 x i8] c"Top-level printing given array values\00"
 @12 = private unnamed_addr constant [55 x i8] c"Printing the first and second integer and float arrays\00"
-@13 = private unnamed_addr constant [53 x i8] c"Printing final_float_array (aka integer[] - float[])\00"
+@13 = private unnamed_addr constant [53 x i8] c"Printing final_float_array (aka integer[] / float[])\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -149,7 +149,7 @@ condeval:                                         ; preds = %loop, %entry
 loop:                                             ; preds = %condeval
   %i2 = load i32, i32* %i
   %array-index = getelementptr [6 x i32], [6 x i32]* %first_int_array, i64 0, i32 %i2
-  store i32 2, i32* %array-index
+  store i32 26, i32* %array-index
   %i3 = load i32, i32* %i
   %array-index4 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 %i3
   store i32 3, i32* %array-index4
@@ -250,7 +250,7 @@ loop39:                                           ; preds = %condeval38
   %26 = load i32, i32* %"$i$36"
   %array-index42 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 %26
   %27 = load double, double* %array-index42
-  %28 = fsub double %25, %27
+  %28 = fdiv double %25, %27
   store double %28, double* %array-index40
   %29 = load i32, i32* %"$i$36"
   %30 = add i32 %29, 1
@@ -288,7 +288,7 @@ loop53:                                           ; preds = %condeval52
   %42 = load i32, i32* %"$i$50"
   %array-index56 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 %42
   %43 = load i32, i32* %array-index56
-  %44 = sub i32 %41, %43
+  %44 = sdiv i32 %41, %43
   store i32 %44, i32* %array-index54
   %45 = load i32, i32* %"$i$50"
   %46 = add i32 %45, 1
@@ -326,7 +326,7 @@ loop67:                                           ; preds = %condeval66
   %58 = load i32, i32* %"$i$64"
   %array-index70 = getelementptr [6 x i32], [6 x i32]* %second_int_array, i64 0, i32 %58
   %59 = load i32, i32* %array-index70
-  %60 = sub i32 %57, %59
+  %60 = sdiv i32 %57, %59
   store i32 %60, i32* %array-index68
   %61 = load i32, i32* %"$i$64"
   %62 = add i32 %61, 1
@@ -364,7 +364,7 @@ loop81:                                           ; preds = %condeval80
   %74 = load i32, i32* %"$i$78"
   %array-index84 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 %74
   %75 = load double, double* %array-index84
-  %76 = fsub double %73, %75
+  %76 = fdiv double %73, %75
   store double %76, double* %array-index82
   %77 = load i32, i32* %"$i$78"
   %78 = add i32 %77, 1
@@ -402,7 +402,7 @@ loop95:                                           ; preds = %condeval94
   %90 = load i32, i32* %"$i$92"
   %array-index98 = getelementptr [6 x double], [6 x double]* %second_float_array, i64 0, i32 %90
   %91 = load double, double* %array-index98
-  %92 = fsub double %89, %91
+  %92 = fdiv double %89, %91
   store double %92, double* %array-index96
   %93 = load i32, i32* %"$i$92"
   %94 = add i32 %93, 1

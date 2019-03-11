@@ -24,7 +24,7 @@ int main() {
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     // Assign elements.
-    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(2));
+    CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(26));
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("second_int_array"), CodeGen::GetVariable("i")), CodeGen::ProduceInteger(3));
 
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_float_array"), CodeGen::GetVariable("i")), CodeGen::ProduceFloat(.8));
@@ -48,29 +48,29 @@ int main() {
     CodeGen::Assign("i", CodeGen::AddIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(1)));
   CodeGen::EndFor();
 
-  // This top assignment is |integer[] - float[]|.
+  // This top assignment is |integer[] / float[]|.
   CodeGen::Assign(CodeGen::GetVariableReference("final_float_array"),
-                  CodeGen::Load(CodeGen::SubtractArrays(
+                  CodeGen::Load(CodeGen::DivideArrays(
                     CodeGen::GetVariableReference("second_int_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::Load(CodeGen::SubtractArrays(
+                  CodeGen::Load(CodeGen::DivideArrays(
                     CodeGen::GetVariableReference("first_int_array"),
                     CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_int_array"),
-                  CodeGen::Load(CodeGen::SubtractArrays(
+                  CodeGen::Load(CodeGen::DivideArrays(
                     CodeGen::GetVariableReference("first_int_array"),
                     CodeGen::GetVariableReference("second_int_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::Load(CodeGen::SubtractArrays(
+                  CodeGen::Load(CodeGen::DivideArrays(
                     CodeGen::GetVariableReference("first_float_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
   CodeGen::Assign(CodeGen::GetVariableReference("first_float_array"),
-                  CodeGen::Load(CodeGen::SubtractArrays(
+                  CodeGen::Load(CodeGen::DivideArrays(
                     CodeGen::GetVariableReference("first_float_array"),
                     CodeGen::GetVariableReference("second_float_array")))
                  );
@@ -94,8 +94,8 @@ int main() {
   // Reset i = 0, for next loop.
   CodeGen::Assign("i", CodeGen::ProduceInteger(0));
 
-  // Print the |integer[] - float[]| array.
-  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing final_float_array (aka integer[] - float[])") });
+  // Print the |integer[] / float[]| array.
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Printing final_float_array (aka integer[] / float[])") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     CodeGen::CallFunction("putFloat", {  CodeGen::Load(CodeGen::IndexArray(CodeGen::GetVariableReference("final_float_array"), CodeGen::GetVariable("i")))   });
@@ -106,6 +106,6 @@ int main() {
   CodeGen::Return(CodeGen::ProduceInteger(0));
   CodeGen::EndFunction();
 
-  CodeGen::PrintBitCode("subtract_arrays");
+  CodeGen::PrintBitCode("divide_arrays");
   return 0;
 }
