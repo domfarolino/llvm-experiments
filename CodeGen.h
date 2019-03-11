@@ -562,55 +562,78 @@ public:
 
     return return_array;
   }
+  // The below two methods are used for adding or subtracting any combination
+  // of integers, floats, integer[]s, and float[]s, with the caveat that one of
+  // the arguments must be an array.
   static Value* AddArrays(Value* left, Value* right) {
-    return AddSubtractArraysImpl(left, right, true);
+    return AddSubtractArrayComboImpl(left, right, true);
   }
   static Value* SubtractArrays(Value* left, Value* right) {
-    return AddSubtractArraysImpl(left, right, false);
+    return AddSubtractArrayComboImpl(left, right, false);
   }
-  // Can accept any combination of integer[] and float[] arrays.
-  static Value* AddSubtractArraysImpl(Value* left, Value* right, bool add_op) {
-    int array_size = ArraySize(left);
-    assert(array_size == ArraySize(right));
+  static Value* AddSubtractArrayComboImpl(Value* left, Value* right,
+                                           bool and_op) {
+    // |left| and |right|: Either a constant integer or float, or an array of
+    // integers or floats.
 
-    Type *left_primitive_type = ArrayPrimitiveType(left),
-         *right_primitive_type = ArrayPrimitiveType(right);
+    // TODO(domfarolino): Get some asserts on this.
+    bool left_is_array = IsArrayType(AbstractTypeFromValue(left)),
+         right_is_array = IsArrayType(AbstractTypeFromValue(right));
+
+    Type *left_primitive_type = (left_is_array) ? ArrayInnerType(left):
+                                                  left->getType(),
+         *right_primitive_type = (right_is_array) ? ArrayInnerType(right):
+                                                    right->getType();
+
+    int array_size = (left_is_array) ? ArraySize(left): ArraySize(right);
 
     // Integer unless discovered otherwise.
     AbstractType return_array_type = AbstractType::IntegerArray;
 
     // Type checking & casting.
-    if (left_primitive_type->isDoubleTy() && !right_primitive_type->isDoubleTy()) {
-      // float[] + integer[]; Promoting |right|.
-      right = CastIntegerArrayToFloatArray(right);
+    if (left_primitive_type->isDoubleTy() &&
+        !right_primitive_type->isDoubleTy()) {
+      // Promoting |right| to float.
+      if (right_is_array)
+        right = CastIntegerArrayToFloatArray(right);
+      else
+        right = CastIntegerToFloat(right);
       return_array_type = AbstractType::FloatArray;
-    } else if (right_primitive_type->isDoubleTy() && !left_primitive_type->isDoubleTy()) {
-      // integer[] + float[]; Promoting |left|.
-      left = CastIntegerArrayToFloatArray(left);
+    } else if (right_primitive_type->isDoubleTy() &&
+               !left_primitive_type->isDoubleTy()) {
+      // Promoting |left| to float.
+      if (left_is_array)
+        left = CastIntegerArrayToFloatArray(left);
+      else
+        left = CastIntegerToFloat(left);
       return_array_type = AbstractType::FloatArray;
-    } else if (left_primitive_type->isDoubleTy() && right_primitive_type->isDoubleTy()) {
-      // float[] + float[]; Promoting nothing.
+    } else if (left_primitive_type->isDoubleTy() &&
+               right_primitive_type->isDoubleTy()) {
+      // Both are floats, promoting nothing.
       return_array_type = AbstractType::FloatArray;
     }
 
     Value* i = CodeGen::CreateVariable(AbstractType::Integer, "$i$");
-    Value* return_array = CodeGen::CreateVariable(return_array_type, "$tmp_arr$", false, true, 6);
-
+    Value* return_array = CodeGen::CreateVariable(return_array_type,
+                                                  "$tmp_arr$", false, true,
+                                                  array_size);
     CodeGen::For();
     CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::Load(i), ProduceInteger(array_size)));
-      // Left & right value at index |i|.
+      // Right value at index |i|.
       Value* return_array_element = CodeGen::IndexArray(return_array, CodeGen::Load(i));
-      Value* left_val = CodeGen::Load(CodeGen::IndexArray(left, CodeGen::Load(i)));
-      Value* right_val = CodeGen::Load(CodeGen::IndexArray(right, CodeGen::Load(i)));
+      Value* left_val = (left_is_array) ? CodeGen::Load(CodeGen::IndexArray(left,
+                                          CodeGen::Load(i))): left;
+      Value* right_val = (right_is_array) ? CodeGen::Load(CodeGen::IndexArray(right,
+                                          CodeGen::Load(i))): right;
 
       // Assign elements.
       if (return_array_type == AbstractType::FloatArray) {
-        if (add_op)
+        if (and_op)
           CodeGen::Assign(return_array_element, CodeGen::AddFloats(left_val, right_val));
         else
           CodeGen::Assign(return_array_element, CodeGen::SubtractFloats(left_val, right_val));
       } else {
-        if (add_op)
+        if (and_op)
           CodeGen::Assign(return_array_element, CodeGen::AddIntegers(left_val, right_val));
         else
           CodeGen::Assign(return_array_element, CodeGen::SubtractIntegers(left_val, right_val));
@@ -620,7 +643,6 @@ public:
 
     return return_array;
   }
-
 ////////////////////////// Begin Variable Management //////////////////////////
 
   // 🛑 [WARNING] 🛑 : These methods should only be used for testing ////////////
@@ -870,7 +892,7 @@ public:
     return cast<ArrayType>(T)->getNumElements();
   }
 
-  static Type* ArrayPrimitiveType(Value* array) {
+  static Type* ArrayInnerType(Value* array) {
     return CodeGen::Load(CodeGen::IndexArray(array,
                                         CodeGen::ProduceInteger(0)))->getType();
   }
