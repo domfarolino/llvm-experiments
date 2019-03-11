@@ -11,7 +11,7 @@ source_filename = "Dom Sample"
 @7 = private unnamed_addr constant [3 x i8] c"%d\00"
 @8 = private unnamed_addr constant [4 x i8] c" %c\00"
 @9 = private unnamed_addr constant [3 x i8] c"%s\00"
-@10 = private unnamed_addr constant [34 x i8] c"Top-level assigning array element\00"
+@10 = private unnamed_addr constant [25 x i8] c"Assigning array elements\00"
 @11 = private unnamed_addr constant [38 x i8] c"Top-level printing given array values\00"
 @12 = private unnamed_addr constant [55 x i8] c"Printing the first and second integer and float arrays\00"
 @13 = private unnamed_addr constant [53 x i8] c"Printing final_float_array (aka integer[] - float[])\00"
@@ -138,7 +138,7 @@ entry:
   %second_int_array = alloca [6 x i32]
   %first_int_array = alloca [6 x i32]
   store i32 0, i32* %i
-  call void @putString(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @10, i32 0, i32 0))
+  call void @putString(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @10, i32 0, i32 0))
   br label %condeval
 
 condeval:                                         ; preds = %loop, %entry

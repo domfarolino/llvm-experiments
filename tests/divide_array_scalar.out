@@ -1,0 +1,41 @@
+Assigning array elements
+Top-level printing given array values
+1
+1.000000
+2
+2.000000
+3
+3.000000
+4
+4.000000
+5
+5.000000
+6
+6.000000
+Printing the first and second integer and float arrays
+5
+5.000000
+2
+2.500000
+1
+1.666667
+1
+1.250000
+1
+1.000000
+0
+0.833333
+Printing final_float_array (aka |integer / float[]|)
+4.000000
+2.000000
+1.333333
+1.000000
+0.800000
+0.666667
+Printing final_float_array (aka |integer[] / float|)
+1.250000
+0.500000
+0.250000
+0.250000
+0.250000
+0.000000

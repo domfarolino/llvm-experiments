@@ -21,7 +21,7 @@ int main() {
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     // Assign elements.
-    CodeGen::CallFunction("putString", { CodeGen::ProduceString("Top-level assigning array element") });
+    CodeGen::CallFunction("putString", { CodeGen::ProduceString("Assigning array elements") });
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
 
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_float_array"), CodeGen::GetVariable("i")), CodeGen::CastIntegerToFloat(CodeGen::GetVariable("i")));

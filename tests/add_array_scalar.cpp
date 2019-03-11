@@ -18,10 +18,10 @@ int main() {
   CodeGen::CreateVariable(AbstractType::FloatArray, "final_float_array", false, true, 6);
   // Assign all array elements.
   CodeGen::CreateVariable(AbstractType::Integer, "i");
+  CodeGen::CallFunction("putString", { CodeGen::ProduceString("Assigning array elements") });
   CodeGen::For();
   CodeGen::ForCondition(CodeGen::LessThanIntegers(CodeGen::GetVariable("i"), CodeGen::ProduceInteger(6)));
     // Assign elements.
-    CodeGen::CallFunction("putString", { CodeGen::ProduceString("Top-level assigning array element") });
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_int_array"), CodeGen::GetVariable("i")), CodeGen::GetVariable("i"));
 
     CodeGen::Assign(CodeGen::IndexArray(CodeGen::GetVariableReference("first_float_array"), CodeGen::GetVariable("i")), CodeGen::CastIntegerToFloat(CodeGen::GetVariable("i")));
